@@ -60,7 +60,7 @@
 </div>
 
 <!-- Config Banner (muncul kalau belum set URL) -->
-<div id="configBanner" style="display:none;">
+<div id="configBanner" style="display:none !important;">
   ⚠️ <span>Belum terhubung ke Google Sheets. <strong>Masukkan URL Apps Script Anda:</strong></span>
   <input id="scriptUrlInput" class="inp" style="max-width:420px;" placeholder="https://script.google.com/macros/s/...">
   <button class="btn btn-primary" onclick="setScriptUrl()">Simpan URL</button>
@@ -198,7 +198,7 @@
 // KONFIGURASI — GANTI URL DI SINI
 // ===========================
 // Setelah deploy Google Apps Script, paste URL-nya di bawah ini:
-let SCRIPT_URL = localStorage.getItem('mb_script_url') || '';
+let SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzW73XhHZCke1-qsAmKtxuZrHNFSihIoqzQGXo0BC-v_PgR_SBuRI7w73NLwF9fCNLf/exec';
 
 function setScriptUrl(){
   const val = document.getElementById('scriptUrlInput').value.trim();
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
 
   if(!SCRIPT_URL){
     document.getElementById('loadingScreen').style.display='none';
-    document.getElementById('configBanner').style.display='flex';
+    
     // Load dari localStorage sebagai fallback
     State.teachers = JSON.parse(localStorage.getItem('mb_teachers')||'null') || JSON.parse(JSON.stringify(DEFAULT_TEACHERS));
     State.zones = JSON.parse(localStorage.getItem('mb_zones')||'[]');
