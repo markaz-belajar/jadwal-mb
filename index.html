@@ -8,7 +8,7 @@
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
     body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica Neue,Arial;}
-    :root{--bg:#0f172a;--panel:#111827;--panel-2:#0b1220;--muted:#cbd5e1;--muted-2:#94a3b8;--line:#1f2937;--accent:#2563eb;--ok:#16a34a;--danger:#dc2626;--evening:#0a1020;}
+    :root{--bg:#0f172a;--panel:#111827;--panel-2:#0b1220;--muted:#cbd5e1;--line:#1f2937;--accent:#2563eb;--ok:#16a34a;--danger:#dc2626;--evening:#0a1020;}
     body{background:var(--bg);color:var(--muted);}
     .panel{background:var(--panel);border:1px solid var(--line);}
     .panel-2{background:var(--panel-2);border:1px solid var(--line);}
@@ -48,23 +48,34 @@
     #loadingScreen{position:fixed;inset:0;background:#0f172a;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
     .spinner{width:36px;height:36px;border:3px solid #1f2937;border-top-color:#2563eb;border-radius:50%;animation:spin .8s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg)}}
+    #configBanner{background:#1e3a8a;border:1px solid #2563eb;border-radius:8px;padding:12px 16px;margin:16px;font-size:13px;display:flex;align-items:center;gap:10px;}
   </style>
 </head>
 <body>
+
+<!-- Loading -->
 <div id="loadingScreen">
   <div class="spinner"></div>
-  <div class="text-slate-400 text-sm">Memuat data jadwal…</div>
+  <div class="text-slate-400 text-sm" id="loadingMsg">Menghubungkan ke Google Sheets…</div>
+</div>
+
+<!-- Config Banner (muncul kalau belum set URL) -->
+<div id="configBanner" style="display:none;">
+  ⚠️ <span>Belum terhubung ke Google Sheets. <strong>Masukkan URL Apps Script Anda:</strong></span>
+  <input id="scriptUrlInput" class="inp" style="max-width:420px;" placeholder="https://script.google.com/macros/s/...">
+  <button class="btn btn-primary" onclick="setScriptUrl()">Simpan URL</button>
 </div>
 
 <header class="border-b border-[#1f2937]">
-  <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+  <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between flex-wrap gap-2">
     <div class="text-lg font-semibold tracking-tight">
       <span class="text-slate-200">Markaz Belajar</span>
       <span class="ml-2 text-slate-400 text-sm">Sistem Penjadwalan</span>
     </div>
-    <div class="text-xs text-slate-400 flex items-center gap-2">
-      <span id="saveStatus" class="text-emerald-400 hidden">✓ Tersimpan</span>
-      <span>Terakhir diperbarui: <span id="lastUpdated" class="text-slate-300">-</span></span>
+    <div class="text-xs text-slate-400 flex items-center gap-3">
+      <span id="syncStatus" class="text-slate-500">●  Offline</span>
+      <span>Diperbarui: <span id="lastUpdated" class="text-slate-300">-</span></span>
+      <button class="btn text-xs py-1" onclick="promptChangeUrl()">⚙ Ganti URL Script</button>
     </div>
   </div>
   <nav class="max-w-7xl mx-auto px-4 pb-2">
@@ -122,312 +133,234 @@
   <!-- Add -->
   <section id="view-add" class="hidden">
     <div class="panel rounded-xl p-5 space-y-6">
-      <div id="step-program">
-        <div class="mb-2">1. Pilih Program</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <button type="button" class="btn btn-program" data-program="preschool">Preschool</button>
-          <button type="button" class="btn btn-program" data-program="elementary">Elementary</button>
-        </div>
-      </div>
-      <div id="step-type">
-        <div class="mb-2">2. Jenis Kelas</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <button type="button" class="btn btn-type" data-type="regular">Reguler (max 6)</button>
-          <button type="button" class="btn btn-type" data-type="private">Private</button>
-        </div>
-      </div>
-      <div id="step-zone">
-        <div class="mb-2">3. Zona Kelas</div>
-        <div id="zoneWrap" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
-      </div>
-      <div id="step-teacher">
-        <div class="mb-2">4. Guru</div>
-        <div id="teacherWrap" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div>
-      </div>
-      <div id="step-day">
-        <div class="mb-2">5. Hari (maks 2)</div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-          <button type="button" class="btn btn-day" data-day="Senin">Senin</button>
-          <button type="button" class="btn btn-day" data-day="Selasa">Selasa</button>
-          <button type="button" class="btn btn-day" data-day="Rabu">Rabu</button>
-          <button type="button" class="btn btn-day" data-day="Kamis">Kamis</button>
-          <button type="button" class="btn btn-day" data-day="Jumat">Jumat</button>
-          <button type="button" class="btn btn-day" data-day="Sabtu">Sabtu</button>
-          <button type="button" class="btn btn-day" data-day="Minggu">Minggu</button>
-        </div>
-      </div>
+      <div id="step-program"><div class="mb-2">1. Pilih Program</div><div class="grid grid-cols-2 md:grid-cols-4 gap-2"><button type="button" class="btn btn-program" data-program="preschool">Preschool</button><button type="button" class="btn btn-program" data-program="elementary">Elementary</button></div></div>
+      <div id="step-type"><div class="mb-2">2. Jenis Kelas</div><div class="grid grid-cols-2 md:grid-cols-4 gap-2"><button type="button" class="btn btn-type" data-type="regular">Reguler (max 6)</button><button type="button" class="btn btn-type" data-type="private">Private</button></div></div>
+      <div id="step-zone"><div class="mb-2">3. Zona Kelas</div><div id="zoneWrap" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div></div>
+      <div id="step-teacher"><div class="mb-2">4. Guru</div><div id="teacherWrap" class="grid grid-cols-2 md:grid-cols-3 gap-2"></div></div>
+      <div id="step-day"><div class="mb-2">5. Hari (maks 2)</div><div class="grid grid-cols-2 md:grid-cols-4 gap-2"><button type="button" class="btn btn-day" data-day="Senin">Senin</button><button type="button" class="btn btn-day" data-day="Selasa">Selasa</button><button type="button" class="btn btn-day" data-day="Rabu">Rabu</button><button type="button" class="btn btn-day" data-day="Kamis">Kamis</button><button type="button" class="btn btn-day" data-day="Jumat">Jumat</button><button type="button" class="btn btn-day" data-day="Sabtu">Sabtu</button><button type="button" class="btn btn-day" data-day="Minggu">Minggu</button></div></div>
       <div id="step-time">
         <div class="mb-2">6. Jam</div>
         <div class="grid md:grid-cols-2 gap-4">
           <div><label class="text-sm text-slate-300">Mulai</label><select id="startTime" class="inp mt-2"></select></div>
           <div><label class="text-sm text-slate-300">Selesai</label><select id="endTime" class="inp mt-2"></select></div>
         </div>
-        <div class="panel-2 rounded-lg p-3 mt-3">
-          <div class="text-sm text-slate-300 mb-1">Siswa aktif pada zona terpilih otomatis masuk.</div>
-          <div id="zoneStudentsPreview" class="text-xs text-slate-400">Pilih Program & Zona …</div>
-        </div>
+        <div class="panel-2 rounded-lg p-3 mt-3"><div class="text-sm text-slate-300 mb-1">Siswa aktif pada zona terpilih otomatis masuk.</div><div id="zoneStudentsPreview" class="text-xs text-slate-400">Pilih Program & Zona …</div></div>
       </div>
-      <div id="step-save">
-        <div class="mb-2">7. Simpan</div>
-        <div class="flex gap-3">
-          <button id="saveSchedule" class="btn btn-primary">Simpan Jadwal</button>
-          <button id="resetAdd" class="btn">Reset</button>
-        </div>
-      </div>
+      <div id="step-save"><div class="mb-2">7. Simpan</div><div class="flex gap-3"><button id="saveSchedule" class="btn btn-primary">Simpan Jadwal</button><button id="resetAdd" class="btn">Reset</button></div></div>
     </div>
   </section>
 
   <!-- Zones -->
   <section id="view-zones" class="hidden">
-    <div class="panel rounded-xl p-4 mb-4">
-      <form id="zoneForm" class="grid md:grid-cols-4 gap-3">
-        <select id="zoneProgram" class="inp"><option value="">Pilih Program</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select>
-        <input id="zoneName" class="inp" placeholder="Nama Zona">
-        <button class="btn btn-ok">Tambah Zona</button>
-      </form>
-    </div>
-    <div class="panel rounded-xl p-4">
-      <table class="w-full text-sm">
-        <thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Program</th><th class="text-left">Zona</th><th class="text-center">Siswa Aktif</th><th class="text-center">Status</th><th class="text-center">Aksi</th></tr></thead>
-        <tbody id="zonesTable"></tbody>
-      </table>
-    </div>
+    <div class="panel rounded-xl p-4 mb-4"><form id="zoneForm" class="grid md:grid-cols-4 gap-3"><select id="zoneProgram" class="inp"><option value="">Pilih Program</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select><input id="zoneName" class="inp" placeholder="Nama Zona"><button class="btn btn-ok">Tambah Zona</button></form></div>
+    <div class="panel rounded-xl p-4"><table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Program</th><th class="text-left">Zona</th><th class="text-center">Siswa Aktif</th><th class="text-center">Status</th><th class="text-center">Aksi</th></tr></thead><tbody id="zonesTable"></tbody></table></div>
   </section>
 
   <!-- Teachers -->
   <section id="view-teachers" class="hidden">
-    <div class="panel rounded-xl p-4 mb-4">
-      <form id="teacherForm" class="grid md:grid-cols-4 gap-3">
-        <input id="teacherName" class="inp" placeholder="Nama Guru">
-        <input id="teacherSpecialty" class="inp" placeholder="Spesialisasi">
-        <button class="btn btn-ok">Tambah Guru</button>
-      </form>
-    </div>
-    <div class="panel rounded-xl p-4">
-      <table class="w-full text-sm">
-        <thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Nama</th><th class="text-left">Spesialisasi</th><th class="text-center">Status</th><th class="text-center">Aksi</th></tr></thead>
-        <tbody id="teachersTable"></tbody>
-      </table>
-    </div>
+    <div class="panel rounded-xl p-4 mb-4"><form id="teacherForm" class="grid md:grid-cols-4 gap-3"><input id="teacherName" class="inp" placeholder="Nama Guru"><input id="teacherSpecialty" class="inp" placeholder="Spesialisasi"><button class="btn btn-ok">Tambah Guru</button></form></div>
+    <div class="panel rounded-xl p-4"><table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Nama</th><th class="text-left">Spesialisasi</th><th class="text-center">Status</th><th class="text-center">Aksi</th></tr></thead><tbody id="teachersTable"></tbody></table></div>
   </section>
 
   <!-- Students -->
   <section id="view-students" class="hidden">
-    <div class="panel rounded-xl p-4 mb-4">
-      <form id="studentForm" class="grid md:grid-cols-5 gap-3">
-        <input id="studentName" class="inp" placeholder="Nama Siswa">
-        <select id="studentProgram" class="inp"><option value="">Pilih Program</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select>
-        <select id="studentZone" class="inp"><option value="">Pilih Zona</option></select>
-        <input id="studentGrade" class="inp" placeholder="Kelas (mis. 1,2,3)">
-        <button class="btn btn-ok">Tambah Siswa</button>
-      </form>
-    </div>
-    <div class="panel rounded-xl p-4">
-      <table class="w-full text-sm">
-        <thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Nama</th><th class="text-left">Program</th><th class="text-left">Zona</th><th class="text-center">Kelas</th><th class="text-center">Status</th><th class="text-center">Aksi</th></tr></thead>
-        <tbody id="studentsTable"></tbody>
-      </table>
-    </div>
+    <div class="panel rounded-xl p-4 mb-4"><form id="studentForm" class="grid md:grid-cols-5 gap-3"><input id="studentName" class="inp" placeholder="Nama Siswa"><select id="studentProgram" class="inp"><option value="">Pilih Program</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select><select id="studentZone" class="inp"><option value="">Pilih Zona</option></select><input id="studentGrade" class="inp" placeholder="Kelas (mis. 1,2,3)"><button class="btn btn-ok">Tambah Siswa</button></form></div>
+    <div class="panel rounded-xl p-4"><table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Nama</th><th class="text-left">Program</th><th class="text-left">Zona</th><th class="text-center">Kelas</th><th class="text-center">Status</th><th class="text-center">Aksi</th></tr></thead><tbody id="studentsTable"></tbody></table></div>
   </section>
 
   <!-- Wellness -->
   <section id="view-wellness" class="hidden">
-    <div class="panel rounded-xl p-4 mb-4">
-      <form id="wellnessForm" class="grid md:grid-cols-5 gap-3">
-        <select id="holidayTeacher" class="inp"><option value="">Pilih Guru</option></select>
-        <select id="holidayDay" class="inp"><option value="">Pilih Hari</option><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select>
-        <select id="holidayStart" class="inp"><option value="">Dari</option></select>
-        <select id="holidayEnd" class="inp"><option value="">Sampai</option></select>
-        <button class="btn btn-ok">Tambah Break</button>
-      </form>
-    </div>
-    <div class="panel rounded-xl p-4 mb-4">
-      <table class="w-full text-sm">
-        <thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Guru</th><th class="text-left">Hari</th><th class="text-left">Waktu</th><th class="text-center">Aksi</th></tr></thead>
-        <tbody id="holidaysTable"></tbody>
-      </table>
-    </div>
+    <div class="panel rounded-xl p-4 mb-4"><form id="wellnessForm" class="grid md:grid-cols-5 gap-3"><select id="holidayTeacher" class="inp"><option value="">Pilih Guru</option></select><select id="holidayDay" class="inp"><option value="">Pilih Hari</option><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select><select id="holidayStart" class="inp"><option value="">Dari</option></select><select id="holidayEnd" class="inp"><option value="">Sampai</option></select><button class="btn btn-ok">Tambah Break</button></form></div>
+    <div class="panel rounded-xl p-4 mb-4"><table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Guru</th><th class="text-left">Hari</th><th class="text-left">Waktu</th><th class="text-center">Aksi</th></tr></thead><tbody id="holidaysTable"></tbody></table></div>
   </section>
 
   <!-- Summary -->
   <section id="view-summary" class="hidden">
     <div class="panel rounded-xl p-4">
-      <div class="mb-3 flex flex-wrap items-center gap-2">
-        <h3 class="text-lg font-semibold">Rekap Jadwal</h3>
-        <span class="text-xs text-slate-400">Ringkasan kelas Reguler dan Private per program, guru, zona, hari, dan jam</span>
-      </div>
+      <div class="mb-3 flex flex-wrap items-center gap-2"><h3 class="text-lg font-semibold">Rekap Jadwal</h3><span class="text-xs text-slate-400">Ringkasan kelas Reguler dan Private</span></div>
       <div class="overflow-x-auto space-y-8">
-        <div>
-          <div class="text-sm font-semibold text-slate-200 mb-2">Rekap Kelas Reguler</div>
-          <table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Program</th><th class="text-left">Guru</th><th class="text-left">Zona Kelas</th><th class="text-center">Jumlah Siswa</th><th class="text-left">Hari</th><th class="text-left">Jam</th></tr></thead><tbody id="summaryTable"></tbody></table>
-        </div>
-        <div>
-          <div class="text-sm font-semibold text-slate-200 mb-2">Rekap Kelas Private</div>
-          <table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Program</th><th class="text-left">Guru</th><th class="text-left">Zona Kelas</th><th class="text-center">Jumlah Siswa</th><th class="text-left">Hari</th><th class="text-left">Jam</th></tr></thead><tbody id="summaryPrivateTable"></tbody></table>
-        </div>
+        <div><div class="text-sm font-semibold text-slate-200 mb-2">Rekap Kelas Reguler</div><table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Program</th><th class="text-left">Guru</th><th class="text-left">Zona Kelas</th><th class="text-center">Jumlah Siswa</th><th class="text-left">Hari</th><th class="text-left">Jam</th></tr></thead><tbody id="summaryTable"></tbody></table></div>
+        <div><div class="text-sm font-semibold text-slate-200 mb-2">Rekap Kelas Private</div><table class="w-full text-sm"><thead><tr class="text-slate-300 border-b border-[#1f2937]"><th class="text-left py-2">Program</th><th class="text-left">Guru</th><th class="text-left">Zona Kelas</th><th class="text-center">Jumlah Siswa</th><th class="text-left">Hari</th><th class="text-left">Jam</th></tr></thead><tbody id="summaryPrivateTable"></tbody></table></div>
       </div>
     </div>
   </section>
 </main>
 
 <!-- Modals -->
-<div id="modalEditZone" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60">
-  <div class="panel rounded-xl w-[420px] max-w-[92vw] p-5">
-    <h3 class="text-lg font-semibold mb-3">Edit Zona</h3>
-    <form id="formEditZone" class="space-y-3">
-      <select id="editZoneProgram" class="inp"><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select>
-      <input id="editZoneName" class="inp" placeholder="Nama Zona">
-      <div class="text-right"><button type="button" class="btn mr-2" onclick="closeEditZone()">Batal</button><button class="btn btn-primary">Simpan</button></div>
-    </form>
-  </div>
-</div>
-<div id="modalEditTeacher" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60">
-  <div class="panel rounded-xl w-[420px] max-w-[92vw] p-5">
-    <h3 class="text-lg font-semibold mb-3">Edit Guru</h3>
-    <form id="formEditTeacher" class="space-y-3">
-      <input id="editTeacherName" class="inp" placeholder="Nama Guru">
-      <input id="editTeacherSpecialty" class="inp" placeholder="Spesialisasi">
-      <div class="text-right"><button type="button" class="btn mr-2" onclick="closeEditTeacher()">Batal</button><button class="btn btn-primary">Simpan</button></div>
-    </form>
-  </div>
-</div>
-<div id="modalEditStudent" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60">
-  <div class="panel rounded-xl w-[420px] max-w-[92vw] p-5">
-    <h3 class="text-lg font-semibold mb-3">Edit Siswa</h3>
-    <form id="formEditStudent" class="space-y-3">
-      <input id="editStudentName" class="inp" placeholder="Nama Siswa" required>
-      <select id="editStudentProgram" class="inp" required><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select>
-      <select id="editStudentZone" class="inp" required></select>
-      <input id="editStudentGrade" class="inp" placeholder="Kelas" required>
-      <div class="text-right"><button type="button" class="btn mr-2" onclick="closeEditStudent()">Batal</button><button class="btn btn-primary">Simpan</button></div>
-    </form>
-  </div>
-</div>
-<div id="modalEditWellness" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60">
-  <div class="panel rounded-xl w-[460px] max-w-[92vw] p-5">
-    <h3 class="text-lg font-semibold mb-3">Edit Wellness Break</h3>
-    <form id="formEditWellness" class="grid md:grid-cols-2 gap-3">
-      <div class="md:col-span-2"><label class="text-sm">Guru</label><select id="editHolidayTeacher" class="inp"></select></div>
-      <div class="md:col-span-2"><label class="text-sm">Hari</label><select id="editHolidayDay" class="inp"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select></div>
-      <div><label class="text-sm">Dari</label><select id="editHolidayStart" class="inp"></select></div>
-      <div><label class="text-sm">Sampai</label><select id="editHolidayEnd" class="inp"></select></div>
-      <div class="md:col-span-2 text-right"><button type="button" class="btn mr-2" onclick="closeEditWellness()">Batal</button><button class="btn btn-primary">Simpan</button></div>
-    </form>
-  </div>
-</div>
-<div id="scheduleModal" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60">
-  <div class="panel rounded-xl w-[520px] max-w-[92vw] p-5 space-y-4">
-    <h3 class="text-lg font-semibold">Detail & Edit Jadwal</h3>
-    <div id="scheduleDetail" class="panel-2 rounded-lg p-3 text-sm space-y-1"></div>
-    <form id="editScheduleForm" class="grid md:grid-cols-2 gap-3">
-      <div class="md:col-span-2"><label class="text-sm">Guru</label><select id="editTeacher" class="inp mt-1"></select></div>
-      <div><label class="text-sm">Hari</label>
-        <select id="editDay" class="inp mt-1"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select>
-      </div>
-      <div></div>
-      <div><label class="text-sm">Mulai</label><select id="editStart" class="inp mt-1"></select></div>
-      <div><label class="text-sm">Selesai</label><select id="editEnd" class="inp mt-1"></select></div>
-      <div class="md:col-span-2 flex justify-between">
-        <button type="button" id="deleteGroup" class="btn btn-danger">Hapus Jadwal Ini</button>
-        <div><button type="button" id="cancelEdit" class="btn mr-2">Batal</button><button class="btn btn-primary">Simpan</button></div>
-      </div>
-    </form>
-  </div>
-</div>
+<div id="modalEditZone" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60"><div class="panel rounded-xl w-[420px] max-w-[92vw] p-5"><h3 class="text-lg font-semibold mb-3">Edit Zona</h3><form id="formEditZone" class="space-y-3"><select id="editZoneProgram" class="inp"><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select><input id="editZoneName" class="inp" placeholder="Nama Zona"><div class="text-right"><button type="button" class="btn mr-2" onclick="closeEditZone()">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div></div>
+<div id="modalEditTeacher" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60"><div class="panel rounded-xl w-[420px] max-w-[92vw] p-5"><h3 class="text-lg font-semibold mb-3">Edit Guru</h3><form id="formEditTeacher" class="space-y-3"><input id="editTeacherName" class="inp" placeholder="Nama Guru"><input id="editTeacherSpecialty" class="inp" placeholder="Spesialisasi"><div class="text-right"><button type="button" class="btn mr-2" onclick="closeEditTeacher()">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div></div>
+<div id="modalEditStudent" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60"><div class="panel rounded-xl w-[420px] max-w-[92vw] p-5"><h3 class="text-lg font-semibold mb-3">Edit Siswa</h3><form id="formEditStudent" class="space-y-3"><input id="editStudentName" class="inp" placeholder="Nama Siswa" required><select id="editStudentProgram" class="inp" required><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select><select id="editStudentZone" class="inp" required></select><input id="editStudentGrade" class="inp" placeholder="Kelas" required><div class="text-right"><button type="button" class="btn mr-2" onclick="closeEditStudent()">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div></div>
+<div id="modalEditWellness" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60"><div class="panel rounded-xl w-[460px] max-w-[92vw] p-5"><h3 class="text-lg font-semibold mb-3">Edit Wellness Break</h3><form id="formEditWellness" class="grid md:grid-cols-2 gap-3"><div class="md:col-span-2"><label class="text-sm">Guru</label><select id="editHolidayTeacher" class="inp"></select></div><div class="md:col-span-2"><label class="text-sm">Hari</label><select id="editHolidayDay" class="inp"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select></div><div><label class="text-sm">Dari</label><select id="editHolidayStart" class="inp"></select></div><div><label class="text-sm">Sampai</label><select id="editHolidayEnd" class="inp"></select></div><div class="md:col-span-2 text-right"><button type="button" class="btn mr-2" onclick="closeEditWellness()">Batal</button><button class="btn btn-primary">Simpan</button></div></form></div></div>
+<div id="scheduleModal" class="modal fixed inset-0 z-50 items-center justify-center bg-black/60"><div class="panel rounded-xl w-[520px] max-w-[92vw] p-5 space-y-4"><h3 class="text-lg font-semibold">Detail & Edit Jadwal</h3><div id="scheduleDetail" class="panel-2 rounded-lg p-3 text-sm space-y-1"></div><form id="editScheduleForm" class="grid md:grid-cols-2 gap-3"><div class="md:col-span-2"><label class="text-sm">Guru</label><select id="editTeacher" class="inp mt-1"></select></div><div><label class="text-sm">Hari</label><select id="editDay" class="inp mt-1"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select></div><div></div><div><label class="text-sm">Mulai</label><select id="editStart" class="inp mt-1"></select></div><div><label class="text-sm">Selesai</label><select id="editEnd" class="inp mt-1"></select></div><div class="md:col-span-2 flex justify-between"><button type="button" id="deleteGroup" class="btn btn-danger">Hapus Jadwal Ini</button><div><button type="button" id="cancelEdit" class="btn mr-2">Batal</button><button class="btn btn-primary">Simpan</button></div></div></form></div></div>
 
 <script>
 // ===========================
-// STORAGE HELPERS (Artifact persistent storage)
+// KONFIGURASI — GANTI URL DI SINI
 // ===========================
-const STORAGE_KEY = 'mb_state_v3';
+// Setelah deploy Google Apps Script, paste URL-nya di bawah ini:
+let SCRIPT_URL = localStorage.getItem('mb_script_url') || '';
 
-async function loadFromStorage() {
-  try {
-    const result = await window.storage.get(STORAGE_KEY);
-    if (result && result.value) {
-      return JSON.parse(result.value);
-    }
-  } catch(e) {}
-  return null;
+function setScriptUrl(){
+  const val = document.getElementById('scriptUrlInput').value.trim();
+  if(!val) return alert('URL tidak boleh kosong');
+  SCRIPT_URL = val;
+  localStorage.setItem('mb_script_url', val);
+  document.getElementById('configBanner').style.display='none';
+  toast('URL disimpan! Memuat data…');
+  loadFromSheets();
 }
-
-async function saveToStorage(data) {
-  try {
-    await window.storage.set(STORAGE_KEY, JSON.stringify(data));
-    showSaveIndicator();
-  } catch(e) {
-    // fallback silently
+function promptChangeUrl(){
+  const url = prompt('Masukkan URL Google Apps Script Anda:', SCRIPT_URL);
+  if(url !== null){
+    SCRIPT_URL = url.trim();
+    localStorage.setItem('mb_script_url', SCRIPT_URL);
+    toast('URL diperbarui! Memuat ulang…');
+    setTimeout(()=> location.reload(), 800);
   }
 }
 
-function showSaveIndicator() {
-  const el = document.getElementById('saveStatus');
-  if (!el) return;
-  el.classList.remove('hidden');
-  clearTimeout(window._saveTimer);
-  window._saveTimer = setTimeout(()=> el.classList.add('hidden'), 2000);
+// ===========================
+// GOOGLE SHEETS API
+// ===========================
+function callScript(params){
+  return new Promise((resolve, reject)=>{
+    if(!SCRIPT_URL){ reject(new Error('URL belum diset')); return; }
+    const cbName = 'cb_' + Date.now();
+    const url = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: cbName}).toString();
+    const script = document.createElement('script');
+    let done = false;
+    window[cbName] = function(data){
+      done = true;
+      delete window[cbName];
+      script.remove();
+      resolve(data);
+    };
+    script.onerror = ()=>{ if(!done){ done=true; delete window[cbName]; script.remove(); reject(new Error('Network error')); }};
+    setTimeout(()=>{ if(!done){ done=true; delete window[cbName]; script.remove(); reject(new Error('Timeout')); }}, 15000);
+    script.src = url;
+    document.head.appendChild(script);
+  });
+}
+
+async function loadFromSheets(){
+  setSyncStatus('loading');
+  try {
+    const res = await callScript({ action:'load' });
+    if(res.success && res.data){
+      State.teachers = res.data.teachers || DEFAULT_TEACHERS;
+      State.zones = res.data.zones || [];
+      State.students = res.data.students || [];
+      State.schedules = res.data.schedules || [];
+      State.holidays = res.data.holidays || [];
+    } else {
+      State.teachers = JSON.parse(JSON.stringify(DEFAULT_TEACHERS));
+    }
+    State.teachers.forEach(t=>{ if(typeof t.active==='undefined') t.active=true; });
+    State.zones.forEach(z=>{ if(typeof z.active==='undefined') z.active=true; });
+    State.students.forEach(s=>{ if(typeof s.active==='undefined') s.active=true; });
+    setSyncStatus('online');
+    renderAllLists(); renderSchedule(); renderSummaryTable();
+    updateLastUpdated();
+  } catch(err){
+    setSyncStatus('error');
+    toast('Gagal terhubung ke Google Sheets. Cek URL script.', 'error');
+    // fallback ke localStorage
+    State.teachers = JSON.parse(localStorage.getItem('mb_teachers')||'null') || JSON.parse(JSON.stringify(DEFAULT_TEACHERS));
+    State.zones = JSON.parse(localStorage.getItem('mb_zones')||'[]');
+    State.students = JSON.parse(localStorage.getItem('mb_students')||'[]');
+    State.schedules = JSON.parse(localStorage.getItem('mb_schedules')||'[]');
+    State.holidays = JSON.parse(localStorage.getItem('mb_holidays')||'[]');
+    renderAllLists(); renderSchedule(); renderSummaryTable();
+  }
+}
+
+async function saveToSheets(){
+  // Simpan ke localStorage dulu (fallback cepat)
+  localStorage.setItem('mb_teachers', JSON.stringify(State.teachers));
+  localStorage.setItem('mb_zones', JSON.stringify(State.zones));
+  localStorage.setItem('mb_students', JSON.stringify(State.students));
+  localStorage.setItem('mb_schedules', JSON.stringify(State.schedules));
+  localStorage.setItem('mb_holidays', JSON.stringify(State.holidays));
+  updateLastUpdated();
+
+  if(!SCRIPT_URL){ setSyncStatus('offline'); return; }
+  setSyncStatus('saving');
+  try {
+    const payload = { teachers:State.teachers, zones:State.zones, students:State.students, schedules:State.schedules, holidays:State.holidays };
+    await callScript({ action:'save', data: JSON.stringify(payload) });
+    setSyncStatus('online');
+  } catch(err){
+    setSyncStatus('error');
+    toast('Tersimpan lokal, gagal sync ke Sheets', 'error');
+  }
+}
+
+function setSyncStatus(status){
+  const el = document.getElementById('syncStatus');
+  if(!el) return;
+  const map = {
+    online: '● Online — tersimpan di Sheets',
+    saving: '↻ Menyimpan ke Sheets…',
+    loading: '↻ Memuat dari Sheets…',
+    offline: '● Offline (localStorage)',
+    error: '⚠ Gagal sync'
+  };
+  const colorMap = {
+    online:'text-emerald-400', saving:'text-yellow-400', loading:'text-blue-400', offline:'text-slate-400', error:'text-red-400'
+  };
+  el.textContent = map[status] || status;
+  el.className = colorMap[status] || 'text-slate-400';
 }
 
 // ===========================
 // STATE
 // ===========================
-const DEFAULT_STATE = {
-  teachers: [
-    { id: 1, name: 'Elis Rosmiati', specialty: 'Math & Science', active: true },
-    { id: 2, name: 'Yessi Marlina', specialty: 'Language & Arts', active: true }
-  ],
-  zones: [], students: [], schedules: [], holidays: []
-};
-
-let State = {
+const DEFAULT_TEACHERS = [
+  { id: 1, name: 'Elis Rosmiati', specialty: 'Math & Science', active: true },
+  { id: 2, name: 'Yessi Marlina', specialty: 'Language & Arts', active: true }
+];
+const State = {
   teachers: [], zones: [], students: [], schedules: [], holidays: [],
   form: { program:'', type:'', zone:'', teacher:'', days:[], start:'', end:'' }
 };
-
 const DAYS = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
-const START_SLOTS = []; for (let h=9; h<=19; h++) START_SLOTS.push(`${String(h).padStart(2,'0')}:00`);
+const START_SLOTS = []; for(let h=9;h<=19;h++) START_SLOTS.push(`${String(h).padStart(2,'0')}:00`);
 function nextHour(t){ const [h]=t.split(':').map(Number); return `${String(h+1).padStart(2,'0')}:00`; }
-
-let editingZoneId=null, editingTeacherId=null, editingStudentId=null, editingHolidayId=null, editingGroup=null;
+let editingZoneId=null,editingTeacherId=null,editingStudentId=null,editingHolidayId=null,editingGroup=null;
 
 // ===========================
 // INIT
 // ===========================
-async function init() {
-  const saved = await loadFromStorage();
-  if (saved) {
-    State.teachers = saved.teachers || DEFAULT_STATE.teachers;
-    State.zones = saved.zones || [];
-    State.students = saved.students || [];
-    State.schedules = saved.schedules || [];
-    State.holidays = saved.holidays || [];
-  } else {
-    State.teachers = JSON.parse(JSON.stringify(DEFAULT_STATE.teachers));
-    State.zones = []; State.students = []; State.schedules = []; State.holidays = [];
-  }
-  State.teachers.forEach(t=>{ if(typeof t.active==='undefined') t.active=true; });
-  State.zones.forEach(z=>{ if(typeof z.active==='undefined') z.active=true; });
-  State.students.forEach(s=>{ if(typeof s.active==='undefined') s.active=true; });
-
-  document.getElementById('loadingScreen').style.display='none';
-  updateLastUpdated();
+document.addEventListener('DOMContentLoaded', async ()=>{
   initTabs(); initFilters();
   populateClassTimeSelects(); populateWellnessTimeSelects();
-  renderAllLists(); renderSchedule(); renderSummaryTable();
   bindGlobalButtons();
   initZoneForm(); initTeacherForm(); initStudentForm(); initWellnessForm();
   initEditScheduleModal();
-}
+
+  if(!SCRIPT_URL){
+    document.getElementById('loadingScreen').style.display='none';
+    document.getElementById('configBanner').style.display='flex';
+    // Load dari localStorage sebagai fallback
+    State.teachers = JSON.parse(localStorage.getItem('mb_teachers')||'null') || JSON.parse(JSON.stringify(DEFAULT_TEACHERS));
+    State.zones = JSON.parse(localStorage.getItem('mb_zones')||'[]');
+    State.students = JSON.parse(localStorage.getItem('mb_students')||'[]');
+    State.schedules = JSON.parse(localStorage.getItem('mb_schedules')||'[]');
+    State.holidays = JSON.parse(localStorage.getItem('mb_holidays')||'[]');
+    State.teachers.forEach(t=>{ if(typeof t.active==='undefined') t.active=true; });
+    setSyncStatus('offline');
+    renderAllLists(); renderSchedule(); renderSummaryTable();
+  } else {
+    await loadFromSheets();
+    document.getElementById('loadingScreen').style.display='none';
+  }
+});
 
 function updateLastUpdated(){
   const el=document.getElementById('lastUpdated');
   if(el) el.textContent=new Date().toLocaleString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
 }
-
-async function saveAll(){
-  await saveToStorage({ teachers:State.teachers, zones:State.zones, students:State.students, schedules:State.schedules, holidays:State.holidays });
-  updateLastUpdated();
-}
+async function saveAll(){ await saveToSheets(); }
 
 // ===========================
 // TABS
@@ -449,9 +382,8 @@ function initTabs(){
     });
   });
 }
-
 function bindGlobalButtons(){
-  document.getElementById('refreshSchedule').addEventListener('click',renderSchedule);
+  document.getElementById('refreshSchedule').addEventListener('click', async()=>{ await loadFromSheets(); renderSchedule(); });
   document.getElementById('filterTeacher').addEventListener('change',renderSchedule);
   document.getElementById('filterProgram').addEventListener('change',renderSchedule);
   document.getElementById('filterType').addEventListener('change',renderSchedule);
@@ -466,56 +398,55 @@ function initFilters(){
   const ft=document.getElementById('filterTeacher');
   ft.innerHTML='<option value="">Semua Guru</option>'+State.teachers.filter(t=>t.active!==false).map(t=>`<option>${t.name}</option>`).join('');
 }
-function timeOptionsFrom(startH=9,endH=20){
-  const arr=[];for(let h=startH;h<=endH;h++){arr.push(`${String(h).padStart(2,'0')}:00`);}return arr;
-}
+function timeOptionsFrom(startH=9,endH=20){const arr=[];for(let h=startH;h<=endH;h++){arr.push(`${String(h).padStart(2,'0')}:00`);}return arr;}
 function populateClassTimeSelects(){
   const s=document.getElementById('startTime'),e=document.getElementById('endTime'),times=timeOptionsFrom(9,20);
-  if(s) s.innerHTML='<option value="">Pilih</option>'+times.slice(0,-1).map(t=>`<option value="${t}">${t}</option>`).join('');
-  if(e) e.innerHTML='<option value="">Pilih</option>'+times.slice(1).map(t=>`<option value="${t}">${t}</option>`).join('');
+  if(s)s.innerHTML='<option value="">Pilih</option>'+times.slice(0,-1).map(t=>`<option value="${t}">${t}</option>`).join('');
+  if(e)e.innerHTML='<option value="">Pilih</option>'+times.slice(1).map(t=>`<option value="${t}">${t}</option>`).join('');
 }
 function populateWellnessTimeSelects(){
-  const s=document.getElementById('holidayStart'),e=document.getElementById('holidayEnd');
-  if(!s||!e)return;
+  const s=document.getElementById('holidayStart'),e=document.getElementById('holidayEnd');if(!s||!e)return;
   const times=timeOptionsFrom(9,20);
   s.innerHTML='<option value="">Dari</option>'+times.map(t=>`<option value="${t}">${t}</option>`).join('');
   e.innerHTML='<option value="">Sampai</option>'+times.map(t=>`<option value="${t}">${t}</option>`).join('');
 }
 
 // ===========================
-// RENDER HELPERS
+// RENDER
 // ===========================
 function renderAllLists(){renderTeachers();renderZones();renderStudents();renderHolidays();refreshAddButtons();updateStudentZoneOptions();initFilters();}
-
 function renderTeachers(){
   const tb=document.getElementById('teachersTable');if(!tb)return;
-  tb.innerHTML=State.teachers.map(t=>`<tr class="border-b border-[#1f2937]"><td class="py-2">${t.name}</td><td class="py-2">${t.specialty}</td><td class="py-2 text-center">${t.active!==false?'<span class="chip text-emerald-200 border-emerald-800">Aktif</span>':'<span class="chip text-slate-300 border-slate-600">Nonaktif</span>'}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditTeacher(${t.id})">Edit</button><button class="${t.active!==false?'btn':'btn btn-ok'}" onclick="toggleTeacher(${t.id})">${t.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`).join()||`<tr><td colspan="4" class="py-3 text-center text-slate-400">Belum ada guru</td></tr>`;
+  tb.innerHTML=State.teachers.map(t=>`<tr class="border-b border-[#1f2937]"><td class="py-2">${t.name}</td><td class="py-2">${t.specialty}</td><td class="py-2 text-center">${t.active!==false?'<span class="chip text-emerald-200 border-emerald-800">Aktif</span>':'<span class="chip text-slate-300 border-slate-600">Nonaktif</span>'}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditTeacher(${t.id})">Edit</button><button class="${t.active!==false?'btn':'btn btn-ok'}" onclick="toggleTeacher(${t.id})">${t.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`).join('')||`<tr><td colspan="4" class="py-3 text-center text-slate-400">Belum ada guru</td></tr>`;
   initFilters();refreshAddButtons();
 }
 function renderZones(){
   const tb=document.getElementById('zonesTable');if(!tb)return;
-  tb.innerHTML=State.zones.map(z=>{const count=State.students.filter(s=>s.program===z.program&&s.zone===z.name&&s.active!==false).length;return`<tr class="border-b border-[#1f2937]"><td class="py-2">${z.program}</td><td class="py-2">${z.name}</td><td class="py-2 text-center">${count}</td><td class="py-2 text-center">${z.active!==false?'<span class="chip text-emerald-200 border-emerald-800">Aktif</span>':'<span class="chip text-slate-300 border-slate-600">Nonaktif</span>'}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditZone(${z.id})">Edit</button><button class="${z.active!==false?'btn':'btn btn-ok'}" onclick="toggleZone(${z.id})">${z.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`;}).join()||`<tr><td colspan="5" class="py-3 text-center text-slate-400">Belum ada zona</td></tr>`;
+  tb.innerHTML=State.zones.map(z=>{const count=State.students.filter(s=>s.program===z.program&&s.zone===z.name&&s.active!==false).length;return`<tr class="border-b border-[#1f2937]"><td class="py-2">${z.program}</td><td class="py-2">${z.name}</td><td class="py-2 text-center">${count}</td><td class="py-2 text-center">${z.active!==false?'<span class="chip text-emerald-200 border-emerald-800">Aktif</span>':'<span class="chip text-slate-300 border-slate-600">Nonaktif</span>'}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditZone(${z.id})">Edit</button><button class="${z.active!==false?'btn':'btn btn-ok'}" onclick="toggleZone(${z.id})">${z.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`;}).join('')||`<tr><td colspan="5" class="py-3 text-center text-slate-400">Belum ada zona</td></tr>`;
   refreshAddButtons();updateStudentZoneOptions();
 }
 function renderStudents(){
   const tb=document.getElementById('studentsTable');if(!tb)return;
-  tb.innerHTML=State.students.map(s=>`<tr class="border-b border-[#1f2937]"><td class="py-2">${s.name}</td><td class="py-2">${s.program}</td><td class="py-2">${s.zone}</td><td class="py-2 text-center">${s.grade||'-'}</td><td class="py-2 text-center">${s.active!==false?'<span class="chip text-emerald-200 border-emerald-800">Aktif</span>':'<span class="chip text-slate-300 border-slate-600">Nonaktif</span>'}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditStudent(${s.id})">Edit</button><button class="${s.active!==false?'btn':'btn btn-ok'}" onclick="toggleStudent(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`).join()||`<tr><td colspan="6" class="py-3 text-center text-slate-400">Belum ada siswa</td></tr>`;
+  tb.innerHTML=State.students.map(s=>`<tr class="border-b border-[#1f2937]"><td class="py-2">${s.name}</td><td class="py-2">${s.program}</td><td class="py-2">${s.zone}</td><td class="py-2 text-center">${s.grade||'-'}</td><td class="py-2 text-center">${s.active!==false?'<span class="chip text-emerald-200 border-emerald-800">Aktif</span>':'<span class="chip text-slate-300 border-slate-600">Nonaktif</span>'}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditStudent(${s.id})">Edit</button><button class="${s.active!==false?'btn':'btn btn-ok'}" onclick="toggleStudent(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`).join('')||`<tr><td colspan="6" class="py-3 text-center text-slate-400">Belum ada siswa</td></tr>`;
 }
 function renderHolidays(){
   const tb=document.getElementById('holidaysTable');if(!tb)return;
-  tb.innerHTML=State.holidays.map(h=>`<tr class="border-b border-[#1f2937]"><td class="py-2">${h.teacher}</td><td class="py-2">${h.day}</td><td class="py-2">${h.start} - ${h.end}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditWellness(${h.id})">Edit</button><button class="btn btn-danger" onclick="deleteWellness(${h.id})">Hapus</button></td></tr>`).join()||`<tr><td colspan="4" class="py-3 text-center text-slate-400">Belum ada data break</td></tr>`;
+  tb.innerHTML=State.holidays.map(h=>`<tr class="border-b border-[#1f2937]"><td class="py-2">${h.teacher}</td><td class="py-2">${h.day}</td><td class="py-2">${h.start} - ${h.end}</td><td class="py-2 text-center"><button class="btn btn-primary mr-2" onclick="openEditWellness(${h.id})">Edit</button><button class="btn btn-danger" onclick="deleteWellness(${h.id})">Hapus</button></td></tr>`).join('')||`<tr><td colspan="4" class="py-3 text-center text-slate-400">Belum ada data break</td></tr>`;
+}
+function renderSummaryTable(){
+  const tbody=document.getElementById('summaryTable'),tbodyP=document.getElementById('summaryPrivateTable');if(!tbody)return;
+  const mkRows=(type)=>{ const list=State.schedules.filter(s=>s.type===type).filter(s=>{const st=State.students.find(x=>x.id===s.studentId),t=State.teachers.find(x=>x.name===s.teacher),z=State.zones.find(x=>x.name===s.zone&&x.program===s.program);return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false);}); const groups=groupByKey(list,s=>`${s.program}|${s.teacher}|${s.zone}|${s.start}|${s.end}`); return Object.values(groups).map(arr=>{const g=arr[0],count=new Set(arr.map(x=>x.studentId)).size,sortedDays=Array.from(new Set(arr.map(x=>x.day))).sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b));return`<tr class="border-b border-[#1f2937]"><td class="py-2">${g.program}</td><td class="py-2">${g.teacher}</td><td class="py-2">${g.zone}</td><td class="py-2 text-center">${count}</td><td class="py-2">${sortedDays.join(' - ')}</td><td class="py-2">${g.start} - ${g.end}</td></tr>`;}).join('')||`<tr><td colspan="6" class="py-3 text-center text-slate-400">Belum ada data</td></tr>`; };
+  tbody.innerHTML=mkRows('regular'); if(tbodyP) tbodyP.innerHTML=mkRows('private');
 }
 
 // ===========================
 // ADD FLOW
 // ===========================
 function refreshAddButtons(){
-  const zoneWrap=document.getElementById('zoneWrap'),teacherWrap=document.getElementById('teacherWrap');
-  if(!zoneWrap||!teacherWrap)return;
+  const zoneWrap=document.getElementById('zoneWrap'),teacherWrap=document.getElementById('teacherWrap');if(!zoneWrap||!teacherWrap)return;
   const zones=State.zones.filter(z=>(State.form.program?z.program===State.form.program:true)&&z.active!==false);
   zoneWrap.innerHTML=zones.map(z=>`<button type="button" class="btn btn-zone" data-zone="${z.name}">${z.name}</button>`).join('')||`<div class="text-slate-400 text-sm">Belum ada zona aktif</div>`;
-  const teachers=State.teachers.filter(t=>t.active!==false);
-  teacherWrap.innerHTML=teachers.map(t=>`<button type="button" class="btn btn-teacher" data-teacher="${t.name}">${t.name}</button>`).join('')||`<div class="text-slate-400 text-sm">Belum ada guru aktif</div>`;
+  teacherWrap.innerHTML=State.teachers.filter(t=>t.active!==false).map(t=>`<button type="button" class="btn btn-teacher" data-teacher="${t.name}">${t.name}</button>`).join('')||`<div class="text-slate-400 text-sm">Belum ada guru aktif</div>`;
   document.querySelectorAll('.btn-program').forEach(b=>b.onclick=()=>{State.form.program=b.dataset.program;document.querySelectorAll('.btn-program').forEach(x=>x.classList.remove('btn-primary'));b.classList.add('btn-primary');refreshAddButtons();updatePreview();});
   document.querySelectorAll('.btn-type').forEach(b=>b.onclick=()=>{State.form.type=b.dataset.type;document.querySelectorAll('.btn-type').forEach(x=>x.classList.remove('btn-primary'));b.classList.add('btn-primary');});
   zoneWrap.querySelectorAll('.btn-zone').forEach(b=>b.addEventListener('click',()=>{State.form.zone=b.dataset.zone;zoneWrap.querySelectorAll('.btn-zone').forEach(x=>x.classList.remove('btn-primary'));b.classList.add('btn-primary');updatePreview();}));
@@ -539,34 +470,18 @@ async function onSaveSchedule(e){
   for(const d of State.form.days){if(holidayConflict(teacher,d,start,end))return toast(`Guru libur pada ${d} ${start}-${end}`,'error');}
   const zs=State.students.filter(s=>s.program===prog&&s.zone===zone&&s.active!==false);
   if(zs.length===0)return toast('Belum ada siswa aktif di zona ini','error');
-  if(State.form.type==='regular'){
-    for(const d of State.form.days){
-      const existing=State.schedules.filter(sc=>sc.program===prog&&sc.zone===zone&&sc.teacher===teacher&&sc.type==='regular'&&sc.day===d&&sc.start===start).filter(sc=>{const st=State.students.find(x=>x.id===sc.studentId);return st&&st.active!==false;});
-      if(existing.length+zs.length>6)return toast(`Kapasitas reguler maksimal 6 (${d} ${start})`,'error');
-    }
-  }
+  if(State.form.type==='regular'){for(const d of State.form.days){const ex=State.schedules.filter(sc=>sc.program===prog&&sc.zone===zone&&sc.teacher===teacher&&sc.type==='regular'&&sc.day===d&&sc.start===start).filter(sc=>{const st=State.students.find(x=>x.id===sc.studentId);return st&&st.active!==false;});if(ex.length+zs.length>6)return toast(`Kapasitas reguler maksimal 6 (${d} ${start})`,'error');}}
   State.form.days.forEach(day=>{zs.forEach(st=>{State.schedules.push({id:Date.now()+Math.random(),program:prog,zone:zone,type:State.form.type,teacher:teacher,studentId:st.id,studentName:st.name,day,start,end});});});
   await saveAll();renderSchedule();renderSummaryTable();resetAddForm();toast('Jadwal ditambahkan!');
 }
-function resetAddForm(){
-  State.form={program:'',type:'',zone:'',teacher:'',days:[],start:'',end:''};
-  document.querySelectorAll('.btn-program,.btn-type,.btn-zone,.btn-teacher,.btn-day').forEach(b=>b.classList.remove('btn-primary'));
-  const s=document.getElementById('startTime'),e=document.getElementById('endTime');if(s)s.value='';if(e)e.value='';
-  updatePreview();refreshAddButtons();
-}
+function resetAddForm(){State.form={program:'',type:'',zone:'',teacher:'',days:[],start:'',end:''};document.querySelectorAll('.btn-program,.btn-type,.btn-zone,.btn-teacher,.btn-day').forEach(b=>b.classList.remove('btn-primary'));const s=document.getElementById('startTime'),e=document.getElementById('endTime');if(s)s.value='';if(e)e.value='';updatePreview();refreshAddButtons();}
 function isStartBeforeEnd(a,b){return timeToMinutes(a)<timeToMinutes(b);}
 function timeToMinutes(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
 
 // ===========================
 // SCHEDULE RENDER
 // ===========================
-function getFilteredSchedules(){
-  const ft=document.getElementById('filterTeacher').value,fp=document.getElementById('filterProgram').value,fy=document.getElementById('filterType').value;
-  return State.schedules.filter(s=>{
-    const st=State.students.find(x=>x.id===s.studentId),t=State.teachers.find(x=>x.name===s.teacher),z=State.zones.find(x=>x.name===s.zone&&x.program===s.program);
-    return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false)&&(!ft||s.teacher===ft)&&(!fp||s.program===fp)&&(!fy||s.type===fy);
-  });
-}
+function getFilteredSchedules(){const ft=document.getElementById('filterTeacher').value,fp=document.getElementById('filterProgram').value,fy=document.getElementById('filterType').value;return State.schedules.filter(s=>{const st=State.students.find(x=>x.id===s.studentId),t=State.teachers.find(x=>x.name===s.teacher),z=State.zones.find(x=>x.name===s.zone&&x.program===s.program);return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false)&&(!ft||s.teacher===ft)&&(!fp||s.program===fp)&&(!fy||s.type===fy);});}
 function groupByKey(items,keyFn){const m={};items.forEach(it=>{const k=keyFn(it);(m[k]||(m[k]=[])).push(it);});return m;}
 function renderSchedule(){
   const tbody=document.getElementById('scheduleBody'),list=getFilteredSchedules(),ft=document.getElementById('filterTeacher').value;
@@ -575,10 +490,7 @@ function renderSchedule(){
     const tds=DAYS.map(day=>{
       const inRow=list.filter(s=>s.day===day&&s.start===start);
       const groups=groupByKey(inRow,s=>`${s.program}|${s.zone}|${s.teacher}|${s.type}|${s.day}|${s.start}|${s.end}`);
-      const blocks=Object.values(groups).map(arr=>{
-        const g=arr[0],color=`${g.program}-${g.type}`,uniqueStudents=new Set(arr.map(x=>x.studentId)),count=uniqueStudents.size,firstName=(g.teacher||'').trim().split(' ')[0]||g.teacher;
-        return`<div class="schedule-block ${color} mb-1" ondblclick="openScheduleEdit('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')" title="${g.start} - ${g.end}"><div class="font-semibold text-center">${firstName}</div><div class="text-center text-[11px]">${g.zone}</div><div class="text-center text-[10px] mt-1 bg-white/20 rounded px-1">${count} siswa</div>${g.type==='private'?'<div class="text-center text-[10px] mt-1 font-extrabold">PRIVATE</div>':''}</div>`;
-      }).join('');
+      const blocks=Object.values(groups).map(arr=>{const g=arr[0],color=`${g.program}-${g.type}`,count=new Set(arr.map(x=>x.studentId)).size,firstName=(g.teacher||'').trim().split(' ')[0];return`<div class="schedule-block ${color} mb-1" ondblclick="openScheduleEdit('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')" title="${g.start} - ${g.end}"><div class="font-semibold text-center">${firstName}</div><div class="text-center text-[11px]">${g.zone}</div><div class="text-center text-[10px] mt-1 bg-white/20 rounded px-1">${count} siswa</div>${g.type==='private'?'<div class="text-center text-[10px] mt-1 font-extrabold">PRIVATE</div>':''}</div>`;}).join('');
       let wb='';
       if(ft){if(isOnBreak(ft,day,start,end))wb+=`<span class="wb-badge">WB - ${ft.split(' ')[0]}</span>`;}
       else{const ts=State.holidays.filter(h=>h.day===day&&rangesOverlap(h.start,h.end,start,end)&&(State.teachers.find(t=>t.name===h.teacher)?.active!==false)).map(h=>h.teacher);wb=[...new Set(ts)].map(n=>`<span class="wb-badge">WB - ${(n||'').split(' ')[0]}</span>`).join('');}
@@ -605,27 +517,17 @@ function openScheduleEdit(program,zone,teacher,type,day,start,end){
   editingGroup={program,zone,teacher,type,day,start,end};
   const grouped=State.schedules.filter(s=>s.program===program&&s.zone===zone&&s.teacher===teacher&&s.type===type&&s.day===day&&s.start===start&&s.end===end).filter(s=>{const st=State.students.find(x=>x.id===s.studentId);return st&&st.active!==false;});
   const listItems=[...new Set(grouped.map(s=>s.studentName))].sort().map(n=>`<li>${n}</li>`).join('');
-  document.getElementById('scheduleDetail').innerHTML=`<div class="grid grid-cols-2 gap-x-4 gap-y-1"><div><b>Program:</b> ${program}</div><div><b>Zona:</b> ${zone}</div><div><b>Jenis:</b> ${type}</div><div><b>Guru:</b> ${teacher}</div><div><b>Hari:</b> ${day}</div><div><b>Waktu:</b> ${start} - ${end}</div><div class="col-span-2"><b>Jumlah Siswa (aktif):</b> ${new Set(grouped.map(s=>s.studentId)).size}</div></div><div class="mt-2"><div class="mb-1 font-semibold">Daftar Siswa (aktif):</div><ul class="list-disc pl-5 text-[13px] leading-5">${listItems||'<li>-</li>'}</ul></div>`;
-  const tSel=document.getElementById('editTeacher'),activeTeachers=State.teachers.filter(t=>t.active!==false);
-  if(tSel)tSel.innerHTML=activeTeachers.map(t=>`<option ${t.name===teacher?'selected':''}>${t.name}</option>`).join('');
-  document.getElementById('editDay').value=day;
-  document.getElementById('editStart').value=start;
-  document.getElementById('editEnd').value=end;
+  document.getElementById('scheduleDetail').innerHTML=`<div class="grid grid-cols-2 gap-x-4 gap-y-1"><div><b>Program:</b> ${program}</div><div><b>Zona:</b> ${zone}</div><div><b>Jenis:</b> ${type}</div><div><b>Guru:</b> ${teacher}</div><div><b>Hari:</b> ${day}</div><div><b>Waktu:</b> ${start} - ${end}</div><div class="col-span-2"><b>Jumlah Siswa:</b> ${new Set(grouped.map(s=>s.studentId)).size}</div></div><div class="mt-2"><div class="mb-1 font-semibold">Daftar Siswa:</div><ul class="list-disc pl-5 text-[13px] leading-5">${listItems||'<li>-</li>'}</ul></div>`;
+  const tSel=document.getElementById('editTeacher');
+  if(tSel)tSel.innerHTML=State.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===teacher?'selected':''}>${t.name}</option>`).join('');
+  document.getElementById('editDay').value=day;document.getElementById('editStart').value=start;document.getElementById('editEnd').value=end;
   showModal('scheduleModal');
 }
 async function onSaveEditSchedule(e){
-  e.preventDefault();
-  if(!editingGroup)return hideModal('scheduleModal');
+  e.preventDefault();if(!editingGroup)return hideModal('scheduleModal');
   const newTeacher=document.getElementById('editTeacher').value,newDay=document.getElementById('editDay').value,newStart=document.getElementById('editStart').value,newEnd=document.getElementById('editEnd').value;
   if(!isStartBeforeEnd(newStart,newEnd))return toast('Jam mulai harus sebelum jam selesai','error');
-  const tObj=State.teachers.find(t=>t.name===newTeacher);
-  if(!tObj||tObj.active===false)return toast('Guru nonaktif','error');
   if(holidayConflict(newTeacher,newDay,newStart,newEnd))return toast('Bentrok dengan Wellness Break','error');
-  if(editingGroup.type==='regular'){
-    const currentSize=new Set(State.schedules.filter(s=>sameGroup(s,editingGroup)).map(s=>s.studentId)).size;
-    const existingAtTarget=State.schedules.filter(s=>s.program===editingGroup.program&&s.zone===editingGroup.zone&&s.teacher===newTeacher&&s.type===editingGroup.type&&s.day===newDay&&s.start===newStart&&s.end===newEnd&&!sameGroup(s,editingGroup)).filter(s=>{const st=State.students.find(x=>x.id===s.studentId);return st&&st.active!==false;}).length;
-    if(existingAtTarget+currentSize>6)return toast('Kapasitas reguler maksimum 6 di slot tujuan','error');
-  }
   State.schedules=State.schedules.map(s=>sameGroup(s,editingGroup)?{...s,teacher:newTeacher,day:newDay,start:newStart,end:newEnd}:s);
   await saveAll();renderSchedule();renderSummaryTable();hideModal('scheduleModal');toast('Jadwal diperbarui!');editingGroup=null;
 }
@@ -643,185 +545,60 @@ function holidayConflict(teacher,day,start,end){return State.holidays.some(h=>h.
 // ===========================
 function initZoneForm(){
   const form=document.getElementById('zoneForm');if(!form)return;
-  form.addEventListener('submit',async(e)=>{
-    e.preventDefault();
-    const program=document.getElementById('zoneProgram').value,name=(document.getElementById('zoneName').value||'').trim();
-    if(!program||!name)return toast('Lengkapi program & nama zona','error');
-    if(State.zones.some(z=>z.program===program&&z.name.toLowerCase()===name.toLowerCase()))return toast('Zona sudah ada','error');
-    State.zones.push({id:Date.now(),program,name,active:true});
-    await saveAll();renderZones();refreshAddButtons();updateStudentZoneOptions();form.reset();toast('Zona ditambahkan!');
-  });
+  form.addEventListener('submit',async(e)=>{e.preventDefault();const program=document.getElementById('zoneProgram').value,name=(document.getElementById('zoneName').value||'').trim();if(!program||!name)return toast('Lengkapi program & nama zona','error');if(State.zones.some(z=>z.program===program&&z.name.toLowerCase()===name.toLowerCase()))return toast('Zona sudah ada','error');State.zones.push({id:Date.now(),program,name,active:true});await saveAll();renderZones();refreshAddButtons();updateStudentZoneOptions();form.reset();toast('Zona ditambahkan!');});
 }
-window.openEditZone=function(id){
-  const z=State.zones.find(x=>x.id===id);if(!z)return;
-  editingZoneId=id;document.getElementById('editZoneProgram').value=z.program;document.getElementById('editZoneName').value=z.name;showModal('modalEditZone');
-};
+window.openEditZone=function(id){const z=State.zones.find(x=>x.id===id);if(!z)return;editingZoneId=id;document.getElementById('editZoneProgram').value=z.program;document.getElementById('editZoneName').value=z.name;showModal('modalEditZone');};
 function closeEditZone(){hideModal('modalEditZone');editingZoneId=null;}
-document.getElementById('formEditZone')?.addEventListener('submit',async(e)=>{
-  e.preventDefault();if(!editingZoneId)return closeEditZone();
-  const program=document.getElementById('editZoneProgram').value,name=(document.getElementById('editZoneName').value||'').trim();
-  if(!program||!name)return toast('Lengkapi data zona','error');
-  if(State.zones.some(z=>z.id!==editingZoneId&&z.program===program&&z.name.toLowerCase()===name.toLowerCase()))return toast('Zona sudah ada','error');
-  const idx=State.zones.findIndex(x=>x.id===editingZoneId);
-  if(idx>-1){const oldName=State.zones[idx].name;State.zones[idx].program=program;State.zones[idx].name=name;State.students.forEach(s=>{if(s.zone===oldName)s.zone=name;});State.schedules.forEach(sc=>{if(sc.zone===oldName)sc.zone=name;});await saveAll();renderZones();renderStudents();renderSchedule();renderSummaryTable();refreshAddButtons();updateStudentZoneOptions();toast('Zona diperbarui!');}
-  closeEditZone();
-});
-window.toggleZone=async function(id){
-  const i=State.zones.findIndex(x=>x.id===id);if(i<0)return;
-  State.zones[i].active=!State.zones[i].active;await saveAll();renderZones();renderSchedule();renderSummaryTable();refreshAddButtons();toast(`Zona ${State.zones[i].active?'diaktifkan':'dinonaktifkan'}`);
-};
+document.getElementById('formEditZone')?.addEventListener('submit',async(e)=>{e.preventDefault();if(!editingZoneId)return closeEditZone();const program=document.getElementById('editZoneProgram').value,name=(document.getElementById('editZoneName').value||'').trim();if(!program||!name)return toast('Lengkapi data zona','error');const idx=State.zones.findIndex(x=>x.id===editingZoneId);if(idx>-1){const oldName=State.zones[idx].name;State.zones[idx].program=program;State.zones[idx].name=name;State.students.forEach(s=>{if(s.zone===oldName)s.zone=name;});State.schedules.forEach(sc=>{if(sc.zone===oldName)sc.zone=name;});await saveAll();renderZones();renderStudents();renderSchedule();renderSummaryTable();refreshAddButtons();updateStudentZoneOptions();toast('Zona diperbarui!');}closeEditZone();});
+window.toggleZone=async function(id){const i=State.zones.findIndex(x=>x.id===id);if(i<0)return;State.zones[i].active=!State.zones[i].active;await saveAll();renderZones();renderSchedule();renderSummaryTable();refreshAddButtons();toast(`Zona ${State.zones[i].active?'diaktifkan':'dinonaktifkan'}`);};
 
 // ===========================
 // TEACHERS CRUD
 // ===========================
 function initTeacherForm(){
   const form=document.getElementById('teacherForm');if(!form)return;
-  form.addEventListener('submit',async(e)=>{
-    e.preventDefault();
-    const name=(document.getElementById('teacherName').value||'').trim(),spec=(document.getElementById('teacherSpecialty').value||'').trim();
-    if(!name||!spec)return toast('Lengkapi nama & spesialisasi','error');
-    State.teachers.push({id:Date.now(),name,specialty:spec,active:true});
-    await saveAll();renderTeachers();refreshAddButtons();initFilters();toast('Guru ditambahkan!');form.reset();
-  });
+  form.addEventListener('submit',async(e)=>{e.preventDefault();const name=(document.getElementById('teacherName').value||'').trim(),spec=(document.getElementById('teacherSpecialty').value||'').trim();if(!name||!spec)return toast('Lengkapi nama & spesialisasi','error');State.teachers.push({id:Date.now(),name,specialty:spec,active:true});await saveAll();renderTeachers();refreshAddButtons();initFilters();toast('Guru ditambahkan!');form.reset();});
 }
-window.openEditTeacher=function(id){
-  const t=State.teachers.find(x=>x.id===id);if(!t)return;
-  editingTeacherId=id;document.getElementById('editTeacherName').value=t.name;document.getElementById('editTeacherSpecialty').value=t.specialty;showModal('modalEditTeacher');
-};
+window.openEditTeacher=function(id){const t=State.teachers.find(x=>x.id===id);if(!t)return;editingTeacherId=id;document.getElementById('editTeacherName').value=t.name;document.getElementById('editTeacherSpecialty').value=t.specialty;showModal('modalEditTeacher');};
 function closeEditTeacher(){hideModal('modalEditTeacher');editingTeacherId=null;}
-document.getElementById('formEditTeacher')?.addEventListener('submit',async(e)=>{
-  e.preventDefault();if(!editingTeacherId)return closeEditTeacher();
-  const name=(document.getElementById('editTeacherName').value||'').trim(),spec=(document.getElementById('editTeacherSpecialty').value||'').trim();
-  if(!name||!spec)return toast('Lengkapi data guru','error');
-  const idx=State.teachers.findIndex(x=>x.id===editingTeacherId);
-  if(idx>-1){const old=State.teachers[idx].name;State.teachers[idx].name=name;State.teachers[idx].specialty=spec;State.schedules.forEach(s=>{if(s.teacher===old)s.teacher=name;});State.holidays.forEach(h=>{if(h.teacher===old)h.teacher=name;});await saveAll();renderTeachers();renderHolidays();renderSchedule();renderSummaryTable();initFilters();refreshAddButtons();toast('Guru diperbarui!');}
-  closeEditTeacher();
-});
-window.toggleTeacher=async function(id){
-  const i=State.teachers.findIndex(x=>x.id===id);if(i<0)return;
-  State.teachers[i].active=!State.teachers[i].active;await saveAll();renderTeachers();renderSchedule();renderSummaryTable();refreshAddButtons();initFilters();toast(`Guru ${State.teachers[i].active?'diaktifkan':'dinonaktifkan'}`);
-};
+document.getElementById('formEditTeacher')?.addEventListener('submit',async(e)=>{e.preventDefault();if(!editingTeacherId)return closeEditTeacher();const name=(document.getElementById('editTeacherName').value||'').trim(),spec=(document.getElementById('editTeacherSpecialty').value||'').trim();if(!name||!spec)return toast('Lengkapi data guru','error');const idx=State.teachers.findIndex(x=>x.id===editingTeacherId);if(idx>-1){const old=State.teachers[idx].name;State.teachers[idx].name=name;State.teachers[idx].specialty=spec;State.schedules.forEach(s=>{if(s.teacher===old)s.teacher=name;});State.holidays.forEach(h=>{if(h.teacher===old)h.teacher=name;});await saveAll();renderTeachers();renderHolidays();renderSchedule();renderSummaryTable();initFilters();refreshAddButtons();toast('Guru diperbarui!');}closeEditTeacher();});
+window.toggleTeacher=async function(id){const i=State.teachers.findIndex(x=>x.id===id);if(i<0)return;State.teachers[i].active=!State.teachers[i].active;await saveAll();renderTeachers();renderSchedule();renderSummaryTable();refreshAddButtons();initFilters();toast(`Guru ${State.teachers[i].active?'diaktifkan':'dinonaktifkan'}`);};
 
 // ===========================
 // STUDENTS CRUD
 // ===========================
 function initStudentForm(){
   const form=document.getElementById('studentForm');if(!form)return;
-  form.addEventListener('submit',async(e)=>{
-    e.preventDefault();
-    const name=(document.getElementById('studentName').value||'').trim(),program=document.getElementById('studentProgram').value,zone=document.getElementById('studentZone').value,grade=(document.getElementById('studentGrade').value||'').trim();
-    if(!name||!program||!zone||!grade)return toast('Lengkapi data siswa','error');
-    const zObj=State.zones.find(z=>z.name===zone&&z.program===program);
-    if(!zObj||zObj.active===false)return toast('Zona nonaktif','error');
-    State.students.push({id:Date.now(),name,program,zone,grade,active:true});
-    await saveAll();renderStudents();renderZones();refreshAddButtons();toast('Siswa ditambahkan!');form.reset();
-  });
+  form.addEventListener('submit',async(e)=>{e.preventDefault();const name=(document.getElementById('studentName').value||'').trim(),program=document.getElementById('studentProgram').value,zone=document.getElementById('studentZone').value,grade=(document.getElementById('studentGrade').value||'').trim();if(!name||!program||!zone||!grade)return toast('Lengkapi data siswa','error');const zObj=State.zones.find(z=>z.name===zone&&z.program===program);if(!zObj||zObj.active===false)return toast('Zona nonaktif','error');State.students.push({id:Date.now(),name,program,zone,grade,active:true});await saveAll();renderStudents();renderZones();refreshAddButtons();toast('Siswa ditambahkan!');form.reset();});
   document.getElementById('studentProgram')?.addEventListener('change',updateStudentZoneOptions);
 }
-function updateStudentZoneOptions(){
-  const program=document.getElementById('studentProgram')?.value||'',sel=document.getElementById('studentZone');if(!sel)return;
-  const zones=State.zones.filter(z=>(!program||z.program===program)&&z.active!==false);
-  sel.innerHTML='<option value="">Pilih Zona</option>'+zones.map(z=>`<option>${z.name}</option>`).join('');
-}
-window.openEditStudent=function(id){
-  const s=State.students.find(x=>x.id===id);if(!s)return;
-  editingStudentId=id;document.getElementById('editStudentName').value=s.name;document.getElementById('editStudentProgram').value=s.program;
-  populateEditZones(s.program);setTimeout(()=>{document.getElementById('editStudentZone').value=s.zone;document.getElementById('editStudentGrade').value=s.grade||'';},0);
-  showModal('modalEditStudent');
-};
-function populateEditZones(program){
-  const sel=document.getElementById('editStudentZone');
-  sel.innerHTML=State.zones.filter(z=>z.program===program&&z.active!==false).map(z=>`<option>${z.name}</option>`).join('')||'<option value="">-</option>';
-}
+function updateStudentZoneOptions(){const program=document.getElementById('studentProgram')?.value||'',sel=document.getElementById('studentZone');if(!sel)return;sel.innerHTML='<option value="">Pilih Zona</option>'+State.zones.filter(z=>(!program||z.program===program)&&z.active!==false).map(z=>`<option>${z.name}</option>`).join('');}
+window.openEditStudent=function(id){const s=State.students.find(x=>x.id===id);if(!s)return;editingStudentId=id;document.getElementById('editStudentName').value=s.name;document.getElementById('editStudentProgram').value=s.program;populateEditZones(s.program);setTimeout(()=>{document.getElementById('editStudentZone').value=s.zone;document.getElementById('editStudentGrade').value=s.grade||'';},0);showModal('modalEditStudent');};
+function populateEditZones(program){const sel=document.getElementById('editStudentZone');sel.innerHTML=State.zones.filter(z=>z.program===program&&z.active!==false).map(z=>`<option>${z.name}</option>`).join('')||'<option value="">-</option>';}
 document.getElementById('editStudentProgram')?.addEventListener('change',(e)=>populateEditZones(e.target.value));
 function closeEditStudent(){hideModal('modalEditStudent');editingStudentId=null;}
-document.getElementById('formEditStudent')?.addEventListener('submit',async(e)=>{
-  e.preventDefault();if(!editingStudentId)return closeEditStudent();
-  const name=(document.getElementById('editStudentName').value||'').trim(),program=document.getElementById('editStudentProgram').value,zone=document.getElementById('editStudentZone').value,grade=(document.getElementById('editStudentGrade').value||'').trim();
-  if(!name||!program||!zone||!grade)return toast('Lengkapi data siswa','error');
-  const zObj=State.zones.find(z=>z.name===zone&&z.program===program);
-  if(!zObj||zObj.active===false)return toast('Zona nonaktif','error');
-  const idx=State.students.findIndex(x=>x.id===editingStudentId);
-  if(idx>-1){State.students[idx].name=name;State.students[idx].program=program;State.students[idx].zone=zone;State.students[idx].grade=grade;await saveAll();renderStudents();renderZones();renderSchedule();renderSummaryTable();toast('Data siswa diperbarui!');}
-  closeEditStudent();
-});
-window.toggleStudent=async function(id){
-  const i=State.students.findIndex(x=>x.id===id);if(i<0)return;
-  State.students[i].active=!State.students[i].active;await saveAll();renderStudents();renderSchedule();renderSummaryTable();toast(`Siswa ${State.students[i].active?'diaktifkan':'dinonaktifkan'}`);
-};
+document.getElementById('formEditStudent')?.addEventListener('submit',async(e)=>{e.preventDefault();if(!editingStudentId)return closeEditStudent();const name=(document.getElementById('editStudentName').value||'').trim(),program=document.getElementById('editStudentProgram').value,zone=document.getElementById('editStudentZone').value,grade=(document.getElementById('editStudentGrade').value||'').trim();if(!name||!program||!zone||!grade)return toast('Lengkapi data siswa','error');const idx=State.students.findIndex(x=>x.id===editingStudentId);if(idx>-1){State.students[idx].name=name;State.students[idx].program=program;State.students[idx].zone=zone;State.students[idx].grade=grade;await saveAll();renderStudents();renderZones();renderSchedule();renderSummaryTable();toast('Data siswa diperbarui!');}closeEditStudent();});
+window.toggleStudent=async function(id){const i=State.students.findIndex(x=>x.id===id);if(i<0)return;State.students[i].active=!State.students[i].active;await saveAll();renderStudents();renderSchedule();renderSummaryTable();toast(`Siswa ${State.students[i].active?'diaktifkan':'dinonaktifkan'}`);};
 
 // ===========================
 // WELLNESS
 // ===========================
 function initWellnessForm(){
-  const tSel=document.getElementById('holidayTeacher');
-  if(tSel)tSel.innerHTML='<option value="">Pilih Guru</option>'+State.teachers.filter(t=>t.active!==false).map(t=>`<option>${t.name}</option>`).join('');
+  const tSel=document.getElementById('holidayTeacher');if(tSel)tSel.innerHTML='<option value="">Pilih Guru</option>'+State.teachers.filter(t=>t.active!==false).map(t=>`<option>${t.name}</option>`).join('');
   const form=document.getElementById('wellnessForm');if(!form)return;
-  form.addEventListener('submit',async(e)=>{
-    e.preventDefault();
-    const teacher=document.getElementById('holidayTeacher').value,day=document.getElementById('holidayDay').value,start=document.getElementById('holidayStart').value,end=document.getElementById('holidayEnd').value;
-    if(!teacher||!day||!start||!end)return toast('Lengkapi semua field break','error');
-    if(!isStartBeforeEnd(start,end))return toast('Jam mulai harus sebelum jam selesai','error');
-    State.holidays.push({id:Date.now(),teacher,day,start,end});
-    await saveAll();renderHolidays();renderSchedule();toast('Wellness break ditambahkan!');form.reset();
-  });
+  form.addEventListener('submit',async(e)=>{e.preventDefault();const teacher=document.getElementById('holidayTeacher').value,day=document.getElementById('holidayDay').value,start=document.getElementById('holidayStart').value,end=document.getElementById('holidayEnd').value;if(!teacher||!day||!start||!end)return toast('Lengkapi semua field break','error');if(!isStartBeforeEnd(start,end))return toast('Jam mulai harus sebelum jam selesai','error');State.holidays.push({id:Date.now(),teacher,day,start,end});await saveAll();renderHolidays();renderSchedule();toast('Wellness break ditambahkan!');form.reset();});
 }
-window.openEditWellness=function(id){
-  const h=State.holidays.find(x=>x.id===id);if(!h)return;
-  editingHolidayId=id;
-  const tSel=document.getElementById('editHolidayTeacher');
-  if(tSel)tSel.innerHTML=State.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');
-  document.getElementById('editHolidayDay').value=h.day;
-  const sSel=document.getElementById('editHolidayStart'),eSel=document.getElementById('editHolidayEnd'),times=timeOptionsFrom(9,20);
-  if(sSel)sSel.innerHTML=times.map(t=>`<option ${t===h.start?'selected':''}>${t}</option>`).join('');
-  if(eSel)eSel.innerHTML=times.map(t=>`<option ${t===h.end?'selected':''}>${t}</option>`).join('');
-  showModal('modalEditWellness');
-};
+window.openEditWellness=function(id){const h=State.holidays.find(x=>x.id===id);if(!h)return;editingHolidayId=id;const tSel=document.getElementById('editHolidayTeacher');if(tSel)tSel.innerHTML=State.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');document.getElementById('editHolidayDay').value=h.day;const sSel=document.getElementById('editHolidayStart'),eSel=document.getElementById('editHolidayEnd'),times=timeOptionsFrom(9,20);if(sSel)sSel.innerHTML=times.map(t=>`<option ${t===h.start?'selected':''}>${t}</option>`).join('');if(eSel)eSel.innerHTML=times.map(t=>`<option ${t===h.end?'selected':''}>${t}</option>`).join('');showModal('modalEditWellness');};
 function closeEditWellness(){hideModal('modalEditWellness');editingHolidayId=null;}
-window.deleteWellness=async function(id){
-  if(!confirm('Hapus wellness break ini?'))return;
-  State.holidays=State.holidays.filter(x=>x.id!==id);
-  await saveAll();renderHolidays();renderSchedule();toast('Wellness break dihapus!');
-};
-document.getElementById('formEditWellness')?.addEventListener('submit',async(e)=>{
-  e.preventDefault();if(!editingHolidayId)return closeEditWellness();
-  const teacher=document.getElementById('editHolidayTeacher').value,day=document.getElementById('editHolidayDay').value,start=document.getElementById('editHolidayStart').value,end=document.getElementById('editHolidayEnd').value;
-  if(!teacher||!day||!start||!end)return toast('Lengkapi data WB','error');
-  if(!isStartBeforeEnd(start,end))return toast('Jam mulai harus sebelum jam selesai','error');
-  const idx=State.holidays.findIndex(x=>x.id===editingHolidayId);
-  if(idx>-1){State.holidays[idx]={...State.holidays[idx],teacher,day,start,end};await saveAll();renderHolidays();renderSchedule();toast('Wellness break diperbarui!');}
-  closeEditWellness();
-});
-
-// ===========================
-// SUMMARY
-// ===========================
-function renderSummaryTable(){
-  const tbody=document.getElementById('summaryTable'),tbodyPrivate=document.getElementById('summaryPrivateTable');if(!tbody)return;
-  const listReg=State.schedules.filter(s=>s.type==='regular').filter(s=>{const st=State.students.find(x=>x.id===s.studentId),t=State.teachers.find(x=>x.name===s.teacher),z=State.zones.find(x=>x.name===s.zone&&x.program===s.program);return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false);});
-  const groupsReg=groupByKey(listReg,s=>`${s.program}|${s.teacher}|${s.zone}|${s.start}|${s.end}`);
-  tbody.innerHTML=Object.values(groupsReg).map(arr=>{const g=arr[0],count=new Set(arr.map(x=>x.studentId)).size,sortedDays=Array.from(new Set(arr.map(x=>x.day))).sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b));return`<tr class="border-b border-[#1f2937]"><td class="py-2">${g.program}</td><td class="py-2">${g.teacher}</td><td class="py-2">${g.zone}</td><td class="py-2 text-center">${count}</td><td class="py-2">${sortedDays.join(' - ')}</td><td class="py-2">${g.start} - ${g.end}</td></tr>`;}).join('')||`<tr><td colspan="6" class="py-3 text-center text-slate-400">Belum ada data reguler</td></tr>`;
-  if(!tbodyPrivate)return;
-  const listPriv=State.schedules.filter(s=>s.type==='private').filter(s=>{const st=State.students.find(x=>x.id===s.studentId),t=State.teachers.find(x=>x.name===s.teacher),z=State.zones.find(x=>x.name===s.zone&&x.program===s.program);return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false);});
-  const groupsPriv=groupByKey(listPriv,s=>`${s.program}|${s.teacher}|${s.zone}|${s.start}|${s.end}`);
-  tbodyPrivate.innerHTML=Object.values(groupsPriv).map(arr=>{const g=arr[0],count=new Set(arr.map(x=>x.studentId)).size,sortedDays=Array.from(new Set(arr.map(x=>x.day))).sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b));return`<tr class="border-b border-[#1f2937]"><td class="py-2">${g.program}</td><td class="py-2">${g.teacher}</td><td class="py-2">${g.zone}</td><td class="py-2 text-center">${count}</td><td class="py-2">${sortedDays.join(' - ')}</td><td class="py-2">${g.start} - ${g.end}</td></tr>`;}).join('')||`<tr><td colspan="6" class="py-3 text-center text-slate-400">Belum ada data private</td></tr>`;
-}
+window.deleteWellness=async function(id){if(!confirm('Hapus wellness break ini?'))return;State.holidays=State.holidays.filter(x=>x.id!==id);await saveAll();renderHolidays();renderSchedule();toast('Wellness break dihapus!');};
+document.getElementById('formEditWellness')?.addEventListener('submit',async(e)=>{e.preventDefault();if(!editingHolidayId)return closeEditWellness();const teacher=document.getElementById('editHolidayTeacher').value,day=document.getElementById('editHolidayDay').value,start=document.getElementById('editHolidayStart').value,end=document.getElementById('editHolidayEnd').value;if(!teacher||!day||!start||!end)return toast('Lengkapi data WB','error');if(!isStartBeforeEnd(start,end))return toast('Jam mulai harus sebelum jam selesai','error');const idx=State.holidays.findIndex(x=>x.id===editingHolidayId);if(idx>-1){State.holidays[idx]={...State.holidays[idx],teacher,day,start,end};await saveAll();renderHolidays();renderSchedule();toast('Wellness break diperbarui!');}closeEditWellness();});
 
 // ===========================
 // MODAL + TOAST
 // ===========================
 function showModal(id){const m=document.getElementById(id);if(!m)return;m.classList.add('show','flex');}
 function hideModal(id){const m=document.getElementById(id);if(!m)return;m.classList.remove('show','flex');}
-function toast(msg,type='success'){
-  const div=document.createElement('div');
-  div.className=`${type==='error'?'bg-red-600':'bg-emerald-600'} fixed bottom-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm text-white shadow-lg z-[9999]`;
-  div.textContent=msg;document.body.appendChild(div);setTimeout(()=>div.remove(),2200);
-}
-
-// ===========================
-// START
-// ===========================
-init();
+function toast(msg,type='success'){const div=document.createElement('div');div.className=`${type==='error'?'bg-red-600':'bg-emerald-600'} fixed bottom-5 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg text-sm text-white shadow-lg z-[9999]`;div.textContent=msg;document.body.appendChild(div);setTimeout(()=>div.remove(),2500);}
 </script>
 </body>
 </html>
