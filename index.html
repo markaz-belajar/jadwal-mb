@@ -98,6 +98,11 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .bpv{font-size:9px;font-weight:700;letter-spacing:.06em;margin-top:2px;color:#fca5a5;}
 .wb-p{display:inline-flex;align-items:center;background:rgba(239,68,68,.13);color:#fca5a5;border:1px solid rgba(239,68,68,.28);border-radius:5px;padding:1px 6px;font-size:9px;margin:0 2px 2px 0;}
 
+/* continuation block style - subtle top border to show it's a continuation */
+.blk-cont{border-radius:8px;padding:6px 7px;margin-bottom:3px;cursor:pointer;transition:all .15s;font-size:11px;line-height:1.35;opacity:.82;border-top:2px dashed rgba(255,255,255,.18);}
+.blk-cont:hover{transform:translateY(-1px);filter:brightness(1.12);}
+.blk-cont:active{transform:scale(.97);}
+
 /* FORMS */
 .fg{display:flex;flex-direction:column;gap:5px;}
 .fl{font-size:11px;color:var(--txt3);font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
@@ -442,7 +447,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="mbody">
       <div class="fg" style="margin-bottom:10px;"><div class="fl">Guru</div><select id="eTeach" class="inp"></select></div>
       <div class="fg" style="margin-bottom:10px;"><div class="fl">Hari</div><select id="eDay" class="inp"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select></div>
-      <div class="gr2"><div class="fg"><div class="fl">Jam Mulai</div><select id="eStart" class="inp"></select></div><div class="fg"><div class="fl">Jam Selesai</div><select id="eEnd" class="inp"></select></div></div>
+      <div class="gr2"><div class="fg"><div class="fl">Jam Mulai</div><select id="eStart" class="inp" onchange="(function(s){var idx=TIMES.slice(0,-1).indexOf(s.value);var ne=TIMES.slice(1)[idx]||TIMES[TIMES.length-1];document.getElementById('eEnd').value=ne;})(this)"></select></div><div class="fg"><div class="fl">Jam Selesai</div><select id="eEnd" class="inp"></select></div></div>
     </div>
     <div class="mfoot" style="justify-content:space-between;">
       <button class="btn btn-d" onclick="doDeleteSched()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>Hapus</button>
@@ -569,6 +574,7 @@ document.addEventListener('DOMContentLoaded',async()=>{
     const el=document.getElementById(id);if(!el)return;
     el.innerHTML=TIMES.map(t=>'<option>'+t+'</option>').join('');
   });
+  // ── FIX: eStart auto-adjusts eEnd ──
   ['eStart','eEnd'].forEach((id,i)=>{
     const el=document.getElementById(id);if(!el)return;
     const arr=i===0?TIMES.slice(0,-1):TIMES.slice(1);
@@ -645,17 +651,23 @@ function getFiltered(){
 }
 function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])).push(x);});return m;}
 
+// ── FIX 1: Show blocks in every slot they span, not just the start slot ──
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value;
   document.getElementById('schedBody').innerHTML=SLOTS.map(slot=>{
     const end=nh(slot),eve=tm(slot)>=tm('18:00');
     const tds=DAYS.map(day=>{
-      const inRow=list.filter(s=>s.day===day&&s.start===slot);
+      // KEY FIX: match any schedule whose time range COVERS this slot
+      const inRow=list.filter(s=>s.day===day&&tm(s.start)<=tm(slot)&&tm(slot)<tm(s.end));
       const groups=grpBy(inRow,s=>`${s.program}|${s.zone}|${s.teacher}|${s.type}|${s.day}|${s.start}|${s.end}`);
       const blocks=Object.values(groups).map(arr=>{
         const g=arr[0],cnt=new Set(arr.map(x=>x.studentId)).size,fn=(g.teacher||'').split(' ')[0];
         const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
-        return`<div class="blk ${cls}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')"><div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc">${cnt} siswa</div>${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}</div>`;
+        // Show slightly different style for continuation rows vs start row
+        const isStart=g.start===slot;
+        const blkCls=isStart?`blk ${cls}`:`blk-cont ${cls}`;
+        const contLabel=isStart?'':`<div style="font-size:9px;opacity:.55;margin-bottom:1px;">↳ lanjutan ${g.start}–${g.end}</div>`;
+        return`<div class="${blkCls}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')">${contLabel}<div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc">${cnt} siswa</div>${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}</div>`;
       }).join('');
       let wb='';
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,end)))wb='<span class="wb-p">WB</span>';}
@@ -690,7 +702,6 @@ function openSchedDetail(program,zone,teacher,type,day,start,end){
     </div>`;
   }).join('')||'<div style="color:var(--txt3);font-size:12px;">Tidak ada siswa</div>';
 
-  // Footer: edit btn only for admin
   document.getElementById('schedModalFooter').innerHTML=isAdmin
     ?`<div style="display:flex;gap:8px;width:100%;justify-content:space-between;">
        <button class="btn btn-d" onclick="quickDeleteSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus Jadwal</button>
@@ -778,6 +789,7 @@ function rebuildAddButtons(){
   });
 }
 
+// ── FIX 2: Auto-adjust end time = start+1h when start is changed ──
 function renderDayTimeList(){
   const container=document.getElementById('dayTimeList');
   const selectedDays=DAYS.filter(d=>S.form.dayTimes[d]);
@@ -789,7 +801,13 @@ function renderDayTimeList(){
     return`<div class="day-time-row">
       <div class="day-time-label">${day}</div>
       <div class="day-time-selects">
-        <select onchange="S.form.dayTimes['${day}'].start=this.value">${startOpts}</select>
+        <select onchange="(function(el,d){
+          S.form.dayTimes[d].start=el.value;
+          var idx=TIMES.indexOf(el.value);
+          var newEnd=TIMES[idx+1]||TIMES[TIMES.length-1];
+          var endSel=el.parentNode.querySelectorAll('select')[1];
+          if(endSel){endSel.value=newEnd;S.form.dayTimes[d].end=newEnd;}
+        })(this,'${day}')">${startOpts}</select>
         <span class="day-time-sep">→</span>
         <select onchange="S.form.dayTimes['${day}'].end=this.value">${endOpts}</select>
       </div>
@@ -808,7 +826,6 @@ async function onSaveSched(){
   const {prog,type,zone,teacher,dayTimes}=S.form;
   const days=Object.keys(dayTimes);
   if(!prog||!type||!zone||!teacher||!days.length)return toast('Lengkapi semua langkah!','e');
-  // validate each day
   for(const d of days){
     const {start,end}=dayTimes[d];
     if(tm(start)>=tm(end))return toast(`Jam tidak valid untuk ${d}`,'e');
@@ -933,7 +950,6 @@ window.openEditWb=id=>{const h=S.holidays.find(x=>x.id===id);if(!h)return;eWbId=
 window.doSaveWb=async()=>{if(!eWbId)return hideOv('editWbOv');const teacher=document.getElementById('ewTeach').value,day=document.getElementById('ewDay').value,start=document.getElementById('ewStart').value,end=document.getElementById('ewEnd').value;const idx=S.holidays.findIndex(x=>x.id===eWbId);if(idx>-1){S.holidays[idx]={...S.holidays[idx],teacher,day,start,end};await saveAll();rWb();rSched();toast('Break diperbarui!');}hideOv('editWbOv');eWbId=null;};
 window.deleteWb=async id=>{if(!confirm('Hapus wellness break ini?'))return;S.holidays=S.holidays.filter(x=>x.id!==id);await saveAll();rWb();rSched();toast('Break dihapus!');};
 
-
 // ═══════════════════════════════════════
 // QUICK DELETE SCHEDULE
 // ═══════════════════════════════════════
@@ -945,7 +961,6 @@ async function quickDeleteSched(program,zone,teacher,type,day,start,end){
   ));
   await saveAll();rSched();rSummary();hideOv('schedOv');toast('Jadwal dihapus!');
 }
-
 
 // ═══════════════════════════════════════
 // GOOGLE SHEETS IMPORT
