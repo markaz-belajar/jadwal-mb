@@ -330,9 +330,50 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 <!-- SISWA -->
 <div class="view" id="view-students">
+  <!-- Import Google Sheets -->
+  <div class="card" style="margin-bottom:12px;">
+    <div class="ctitle"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Import dari Google Spreadsheet</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <button class="btn btn-g" onclick="importFromSheets()" id="importBtn">
+        <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+        Sync dari Spreadsheet
+      </button>
+      <span id="importStatus" style="font-size:12px;color:var(--txt3);">Belum disync</span>
+    </div>
+    <div id="importPreview" style="display:none;">
+      <div style="font-size:11px;color:var(--txt3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Preview — pilih siswa yang ingin ditambahkan</div>
+      <div style="overflow-x:auto;max-height:220px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;">
+        <table class="dtbl" id="importPreviewTbl">
+          <thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"> Semua</th><th>Nama</th><th>Program</th><th>Kelas</th></tr></thead>
+          <tbody id="importPreviewBody"></tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+        <button class="btn btn-g" onclick="confirmImport()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambahkan yang Dipilih
+        </button>
+        <span id="selectedCount" style="font-size:12px;color:var(--txt3);">0 dipilih</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tambah Manual -->
   <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Tambah Siswa</div>
-    <form id="studForm"><div class="gr4"><div class="fg"><div class="fl">Nama Siswa</div><input id="sName" class="inp" placeholder="Nama lengkap"></div><div class="fg"><div class="fl">Program</div><select id="sProg" class="inp" onchange="updateSZones()"><option value="">Pilih</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select></div><div class="fg"><div class="fl">Zona</div><select id="sZone" class="inp"><option value="">Pilih Zona</option></select></div><div class="fg"><div class="fl">Kelas</div><input id="sGrade" class="inp" placeholder="mis. 3"></div></div><button type="submit" class="btn btn-g"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Siswa</button></form>
+    <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Tambah Siswa Manual</div>
+    <form id="studForm">
+      <div style="position:relative;margin-bottom:10px;">
+        <div class="fl" style="margin-bottom:5px;">NAMA SISWA</div>
+        <input id="sName" class="inp" placeholder="Ketik nama atau pilih dari spreadsheet..." autocomplete="off" oninput="showSuggestions(this.value)">
+        <div id="nameSuggest" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf2);border:1px solid var(--bdr2);border-radius:8px;z-index:50;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);"></div>
+      </div>
+      <div class="gr3" style="margin-bottom:10px;">
+        <div class="fg"><div class="fl">Program</div><select id="sProg" class="inp" onchange="updateSZones()"><option value="">Pilih</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select></div>
+        <div class="fg"><div class="fl">Zona</div><select id="sZone" class="inp"><option value="">Pilih Zona</option></select></div>
+        <div class="fg"><div class="fl">Kelas</div><input id="sGrade" class="inp" placeholder="mis. 3"></div>
+      </div>
+      <button type="submit" class="btn btn-g"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Siswa</button>
+    </form>
   </div>
   <div class="card"><table class="dtbl"><thead><tr><th>Nama</th><th>Program</th><th>Zona</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="studTbl"></tbody></table></div>
 </div>
@@ -815,7 +856,18 @@ function rZones(){
 }
 function rStud(){
   const tb=document.getElementById('studTbl');if(!tb)return;
-  tb.innerHTML=S.students.map(s=>`<tr><td>${s.name}</td><td>${s.program}</td><td>${s.zone}</td><td>${s.grade||'-'}</td><td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Nonaktif'}</span></td><td><button class="btn btn-sm btn-p" style="margin-right:4px;" onclick="openEditStud(${s.id})">Edit</button><button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada siswa</td></tr>`;
+  tb.innerHTML=S.students.map(s=>`<tr>
+    <td>${s.name}${s.fromSheets?'<span class="chip cg" style="margin-left:5px;font-size:10px;padding:1px 5px;">Sheets</span>':''}</td>
+    <td>${s.program||'—'}</td>
+    <td>${s.zone||'<span style="color:var(--red);font-size:11px;">Belum diset</span>'}</td>
+    <td>${s.grade||'-'}</td>
+    <td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Nonaktif'}</span></td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap;">
+      <button class="btn btn-sm btn-p" onclick="openEditStud(${s.id})">Edit</button>
+      <button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button>
+      <button class="btn btn-sm btn-d" onclick="deleteStud(${s.id})">Hapus</button>
+    </td>
+  </tr>`).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada siswa</td></tr>`;
 }
 function rWb(){
   const tb=document.getElementById('wbTbl');if(!tb)return;
@@ -869,6 +921,13 @@ window.toggleTeach=async id=>{const i=S.teachers.findIndex(x=>x.id===id);if(i<0)
 window.openEditStud=id=>{const s=S.students.find(x=>x.id===id);if(!s)return;eStudId=id;document.getElementById('esName').value=s.name;document.getElementById('esProg').value=s.program;populateEditZones(s.program);setTimeout(()=>document.getElementById('esZone').value=s.zone,0);document.getElementById('esGrade').value=s.grade||'';showOv('editStudOv');};
 window.doSaveStud=async()=>{if(!eStudId)return hideOv('editStudOv');const name=(document.getElementById('esName').value||'').trim(),prog=document.getElementById('esProg').value,zone=document.getElementById('esZone').value,grade=(document.getElementById('esGrade').value||'').trim();const idx=S.students.findIndex(x=>x.id===eStudId);if(idx>-1){S.students[idx]={...S.students[idx],name,program:prog,zone,grade};await saveAll();rStud();rZones();rSched();toast('Siswa diperbarui!');}hideOv('editStudOv');eStudId=null;};
 window.toggleStud=async id=>{const i=S.students.findIndex(x=>x.id===id);if(i<0)return;S.students[i].active=!S.students[i].active;await saveAll();rStud();rSched();toast(`Siswa ${S.students[i].active?'diaktifkan':'dinonaktifkan'}`);};
+window.deleteStud=async id=>{
+  const s=S.students.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Hapus siswa "${s.name}"?\nSemua jadwal siswa ini juga akan dihapus.`))return;
+  S.schedules=S.schedules.filter(sc=>sc.studentId!==id);
+  S.students=S.students.filter(x=>x.id!==id);
+  await saveAll();rStud();rZones();rSched();toast('Siswa dihapus!');
+};
 
 window.openEditWb=id=>{const h=S.holidays.find(x=>x.id===id);if(!h)return;eWbId=id;const ts=document.getElementById('ewTeach');ts.innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');document.getElementById('ewDay').value=h.day;document.getElementById('ewStart').value=h.start;document.getElementById('ewEnd').value=h.end;showOv('editWbOv');};
 window.doSaveWb=async()=>{if(!eWbId)return hideOv('editWbOv');const teacher=document.getElementById('ewTeach').value,day=document.getElementById('ewDay').value,start=document.getElementById('ewStart').value,end=document.getElementById('ewEnd').value;const idx=S.holidays.findIndex(x=>x.id===eWbId);if(idx>-1){S.holidays[idx]={...S.holidays[idx],teacher,day,start,end};await saveAll();rWb();rSched();toast('Break diperbarui!');}hideOv('editWbOv');eWbId=null;};
@@ -886,6 +945,119 @@ async function quickDeleteSched(program,zone,teacher,type,day,start,end){
   ));
   await saveAll();rSched();rSummary();hideOv('schedOv');toast('Jadwal dihapus!');
 }
+
+
+// ═══════════════════════════════════════
+// GOOGLE SHEETS IMPORT
+// ═══════════════════════════════════════
+const SHEET_ID='1Jt2fv8NLgBxuzdXvw0ptSreCfGBlSuXvODcg5ia9CfA';
+const SHEET_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Form+responses+1`;
+let sheetData=[];
+
+function parseProgram(raw){
+  if(!raw)return'';
+  const r=raw.toLowerCase();
+  if(r.includes('elementary'))return'elementary';
+  if(r.includes('preschool')||r.includes('perschool'))return'preschool';
+  return'';
+}
+function parseGrade(raw){
+  if(!raw)return'';
+  const r=String(raw).toLowerCase();
+  if(r.includes('belum')||r.includes('tk'))return'Belum Sekolah';
+  const m=r.match(/kelas\s*(\d+)/i)||r.match(/(\d+)/);
+  if(m)return m[1];
+  return String(raw).trim();
+}
+
+async function importFromSheets(){
+  const btn=document.getElementById('importBtn');
+  const status=document.getElementById('importStatus');
+  btn.disabled=true;
+  status.textContent='Mengambil data…';
+  status.style.color='var(--acc)';
+  try{
+    const res=await fetch(SHEET_URL);
+    const text=await res.text();
+    const json=JSON.parse(text.replace(/^\/\*O_o\*\/\s*google\.visualization\.Query\.setResponse\(/, '').replace(/\);?\s*$/, ''));
+    const rows=json.table.rows;
+    sheetData=rows.map(r=>({
+      name:(r.c[2]?.v||'').toString().trim(),
+      program:parseProgram(r.c[23]?.v||''),
+      grade:parseGrade(r.c[9]?.v||''),
+    })).filter(r=>r.name&&r.name!=='-'&&r.name.length>1);
+    renderImportPreview();
+    document.getElementById('importPreview').style.display='block';
+    status.textContent=`${sheetData.length} siswa ditemukan`;
+    status.style.color='var(--grn)';
+  }catch(e){
+    console.error(e);
+    status.textContent='Gagal. Pastikan spreadsheet sudah publik.';
+    status.style.color='var(--red)';
+  }
+  btn.disabled=false;
+}
+
+function renderImportPreview(){
+  const tbody=document.getElementById('importPreviewBody');
+  tbody.innerHTML=sheetData.map((s,i)=>{
+    const exists=S.students.some(x=>x.name.toLowerCase()===s.name.toLowerCase());
+    return`<tr style="${exists?'opacity:.4':''}">
+      <td><input type="checkbox" class="imp-chk" data-idx="${i}" ${exists?'disabled title="Sudah ada"':''} onchange="updateSelectedCount()"></td>
+      <td>${s.name}</td>
+      <td>${s.program||'—'}</td>
+      <td>${s.grade||'—'}</td>
+    </tr>`;
+  }).join('');
+  updateSelectedCount();
+}
+
+function toggleSelectAll(cb){
+  document.querySelectorAll('.imp-chk:not(:disabled)').forEach(x=>x.checked=cb.checked);
+  updateSelectedCount();
+}
+function updateSelectedCount(){
+  const n=document.querySelectorAll('.imp-chk:checked').length;
+  document.getElementById('selectedCount').textContent=`${n} dipilih`;
+}
+
+async function confirmImport(){
+  const selected=[...document.querySelectorAll('.imp-chk:checked')].map(cb=>sheetData[parseInt(cb.dataset.idx)]);
+  if(!selected.length)return toast('Pilih minimal 1 siswa','e');
+  selected.forEach(s=>{
+    if(!S.students.some(x=>x.name.toLowerCase()===s.name.toLowerCase())){
+      S.students.push({id:Date.now()+Math.random(),name:s.name,program:s.program||'',zone:'',grade:s.grade||'',active:true,fromSheets:true});
+    }
+  });
+  await saveAll();rStud();rZones();rebuildAddButtons();
+  renderImportPreview();
+  toast(`${selected.length} siswa ditambahkan! Set zona via tombol Edit.`);
+}
+
+function showSuggestions(val){
+  const box=document.getElementById('nameSuggest');
+  if(!val||val.length<2||!sheetData.length){box.style.display='none';return;}
+  const matches=sheetData.filter(s=>s.name.toLowerCase().includes(val.toLowerCase())&&
+    !S.students.some(x=>x.name.toLowerCase()===s.name.toLowerCase())).slice(0,8);
+  if(!matches.length){box.style.display='none';return;}
+  box.style.display='block';
+  box.innerHTML=matches.map(s=>`<div onclick="fillFromSheet('${s.name.replace(/'/g,"\\'")}','${s.program}','${s.grade}')"
+    style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bdr);transition:background .1s;"
+    onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''">
+    <div style="font-weight:500">${s.name}</div>
+    <div style="font-size:11px;color:var(--txt3)">${s.program||'—'} • Kelas ${s.grade||'—'}</div>
+  </div>`).join('');
+}
+function fillFromSheet(name,program,grade){
+  document.getElementById('sName').value=name;
+  document.getElementById('nameSuggest').style.display='none';
+  if(program){document.getElementById('sProg').value=program;updateSZones();}
+  if(grade)document.getElementById('sGrade').value=grade;
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#sName')&&!e.target.closest('#nameSuggest'))
+    document.getElementById('nameSuggest').style.display='none';
+});
 
 // ═══════════════════════════════════════
 // TOAST
