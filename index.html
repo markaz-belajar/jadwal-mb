@@ -696,9 +696,10 @@ function openSchedDetail(program,zone,teacher,type,day,start,end){
     </div>`;
   }).join('')||'<div style="color:var(--txt3);font-size:12px;">Tidak ada siswa</div>';
 
-  // Footer: edit btn only for admin
+  // Footer: edit & delete btn for admin
   document.getElementById('schedModalFooter').innerHTML=isAdmin
-    ?`<button class="btn btn-p" onclick="openEditSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Jadwal</button>`
+    ?`<button class="btn btn-d" onclick="quickDeleteSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus Jadwal</button>
+     <button class="btn btn-p" onclick="openEditSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Jadwal</button>`
     :'';
   showOv('schedOv');
 }
@@ -756,6 +757,12 @@ async function doDeleteSched(){
   if(!confirm('Hapus jadwal ini?'))return;
   S.schedules=S.schedules.filter(s=>!sameGrp(s,eGroup));
   await saveAll();rSched();rSummary();hideOv('editSchedOv');toast('Jadwal dihapus!');eGroup=null;
+}
+async function quickDeleteSched(program,zone,teacher,type,day,start,end){
+  const grp={program,zone,teacher,type,day,start,end};
+  if(!confirm(`Hapus jadwal:\n${zone} • ${teacher} • ${day} ${start}–${end}?`))return;
+  S.schedules=S.schedules.filter(s=>!sameGrp(s,grp));
+  await saveAll();rSched();rSummary();hideOv('schedOv');toast('Jadwal dihapus!');
 }
 function sameGrp(s,k){return s.program===k.program&&s.zone===k.zone&&s.teacher===k.teacher&&s.type===k.type&&s.day===k.day&&s.start===k.start&&s.end===k.end;}
 
@@ -865,7 +872,7 @@ function rStud(){
     <td>${s.zone||'<span style="color:var(--red);font-size:11px;">Belum diset</span>'}</td>
     <td>${s.grade||'-'}</td>
     <td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Nonaktif'}</span></td>
-    <td><button class="btn btn-sm btn-p" style="margin-right:4px;" onclick="openEditStud(${s.id})">Edit</button><button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button></td>
+    <td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm btn-p" onclick="openEditStud(${s.id})">Edit</button><button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button><button class="btn btn-sm btn-d" onclick="deleteStud(${s.id})">Hapus</button></td>
   </tr>`).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada siswa</td></tr>`;
 }
 function rWb(){
@@ -920,6 +927,13 @@ window.toggleTeach=async id=>{const i=S.teachers.findIndex(x=>x.id===id);if(i<0)
 window.openEditStud=id=>{const s=S.students.find(x=>x.id===id);if(!s)return;eStudId=id;document.getElementById('esName').value=s.name;document.getElementById('esProg').value=s.program;populateEditZones(s.program);setTimeout(()=>document.getElementById('esZone').value=s.zone,0);document.getElementById('esGrade').value=s.grade||'';showOv('editStudOv');};
 window.doSaveStud=async()=>{if(!eStudId)return hideOv('editStudOv');const name=(document.getElementById('esName').value||'').trim(),prog=document.getElementById('esProg').value,zone=document.getElementById('esZone').value,grade=(document.getElementById('esGrade').value||'').trim();const idx=S.students.findIndex(x=>x.id===eStudId);if(idx>-1){S.students[idx]={...S.students[idx],name,program:prog,zone,grade};await saveAll();rStud();rZones();rSched();toast('Siswa diperbarui!');}hideOv('editStudOv');eStudId=null;};
 window.toggleStud=async id=>{const i=S.students.findIndex(x=>x.id===id);if(i<0)return;S.students[i].active=!S.students[i].active;await saveAll();rStud();rSched();toast(`Siswa ${S.students[i].active?'diaktifkan':'dinonaktifkan'}`);};
+window.deleteStud=async id=>{
+  const s=S.students.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Hapus siswa "${s.name}"?\n\nSemua jadwal siswa ini juga akan dihapus.`))return;
+  S.schedules=S.schedules.filter(sc=>sc.studentId!==id);
+  S.students=S.students.filter(x=>x.id!==id);
+  await saveAll();rStud();rZones();rSched();toast('Siswa dihapus!');
+};
 
 window.openEditWb=id=>{const h=S.holidays.find(x=>x.id===id);if(!h)return;eWbId=id;const ts=document.getElementById('ewTeach');ts.innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');document.getElementById('ewDay').value=h.day;document.getElementById('ewStart').value=h.start;document.getElementById('ewEnd').value=h.end;showOv('editWbOv');};
 window.doSaveWb=async()=>{if(!eWbId)return hideOv('editWbOv');const teacher=document.getElementById('ewTeach').value,day=document.getElementById('ewDay').value,start=document.getElementById('ewStart').value,end=document.getElementById('ewEnd').value;const idx=S.holidays.findIndex(x=>x.id===eWbId);if(idx>-1){S.holidays[idx]={...S.holidays[idx],teacher,day,start,end};await saveAll();rWb();rSched();toast('Break diperbarui!');}hideOv('editWbOv');eWbId=null;};
