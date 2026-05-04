@@ -658,7 +658,6 @@ function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])
 
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value;
-  const ROW_H=56;
 
   const allGroups={};
   list.forEach(s=>{
@@ -674,7 +673,7 @@ function rSched(){
     return Math.max(1,c);
   }
 
-  // Build plain table with fixed-height cells, no blocks inside
+  // Build plain table, no blocks inside cells
   const bodyHTML=SLOTS.map((slot,si)=>{
     const eve=tm(slot)>=tm('18:00');
     const tds=DAYS.map((day,di)=>{
@@ -682,26 +681,18 @@ function rSched(){
       const slotEnd=nh(slot);
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,slotEnd)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,slotEnd));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
-      return`<td id="cell_${di}_${si}" style="height:${ROW_H}px;min-width:105px;vertical-align:top;padding:2px 3px;">${wb}</td>`;
+      return`<td id="cell_${di}_${si}" style="min-width:105px;vertical-align:top;padding:2px 3px;">${wb}</td>`;
     }).join('');
-    return`<tr class="${eve?'er':''}"><td class="ttd" style="height:${ROW_H}px;"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tds}</tr>`;
+    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tds}</tr>`;
   }).join('');
 
   document.getElementById('schedBody').innerHTML=bodyHTML;
 
-  // Remove old overlays
   const wrap=document.querySelector('.sched-wrap');
   wrap.querySelectorAll('.blk-overlay').forEach(el=>el.remove());
 
-  // Double rAF to ensure layout is complete
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    // Get table position relative to wrap
-    const tbl=wrap.querySelector('.stbl');
-    if(!tbl)return;
-    const tblRect=tbl.getBoundingClientRect();
     const wrapRect=wrap.getBoundingClientRect();
-    const tblOffsetTop=tblRect.top-wrapRect.top+wrap.scrollTop;
-    const tblOffsetLeft=tblRect.left-wrapRect.left+wrap.scrollLeft;
 
     Object.values(allGroups).forEach(arr=>{
       const g=arr[0];
@@ -710,17 +701,23 @@ function rSched(){
       const si=SLOTS.indexOf(g.start);
       if(di<0||si<0)return;
 
-      const cell=document.getElementById(`cell_${di}_${si}`);
-      if(!cell)return;
+      const cellStart=document.getElementById(`cell_${di}_${si}`);
+      if(!cellStart)return;
 
       const span=spanCount(g.start,g.end);
-      const cellRect=cell.getBoundingClientRect();
 
-      // Position relative to wrap, accounting for scroll
-      const top=cellRect.top-wrapRect.top+wrap.scrollTop+2;
-      const left=cellRect.left-wrapRect.left+wrap.scrollLeft+2;
-      const width=cell.offsetWidth-6;
-      const height=span*ROW_H-6;
+      // Measure start cell
+      const r0=cellStart.getBoundingClientRect();
+
+      // Measure end cell to get accurate bottom
+      const siEnd=si+span-1;
+      const cellEnd=document.getElementById(`cell_${di}_${Math.min(siEnd,SLOTS.length-1)}`);
+      const r1=cellEnd?cellEnd.getBoundingClientRect():r0;
+
+      const top   = r0.top  - wrapRect.top  + wrap.scrollTop  + 2;
+      const left  = r0.left - wrapRect.left + wrap.scrollLeft + 2;
+      const width = r0.width - 6;
+      const height= (r1.bottom - r0.top) - 4;
 
       const fn=(g.teacher||'').split(' ')[0];
       const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
