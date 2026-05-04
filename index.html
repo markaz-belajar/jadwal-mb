@@ -72,7 +72,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .iBtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bdr);background:var(--surf);color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .iBtn:hover{border-color:var(--acc);color:var(--acc);}
 .iBtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.sched-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--bdr);}
+.sched-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--bdr);position:relative;}
 .stbl{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;}
 .stbl thead th{background:var(--surf);color:var(--txt3);font-weight:600;padding:9px 5px;text-align:center;border-bottom:1px solid var(--bdr);font-size:10px;white-space:nowrap;letter-spacing:.05em;text-transform:uppercase;}
 .stbl thead th.thd{text-align:left;position:sticky;left:0;z-index:20;background:var(--surf);min-width:58px;padding-left:10px;}
@@ -587,6 +587,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
 async function doRefresh(){await loadData();rAll();rSched();toast('Data diperbarui');}
 
+// Re-render blok overlay saat scroll atau resize agar posisi tetap akurat
+window.addEventListener('resize',()=>rSched());
+document.querySelector('.sched-wrap')?.addEventListener('scroll',()=>rSched());
+
 // ═══════════════════════════════════════
 // NAV
 // ═══════════════════════════════════════
@@ -653,6 +657,7 @@ function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])
 
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value;
+  const ROW_H=54; // pixel height per 1-hour row — must match CSS td height
 
   // Group schedules by unique key
   const allGroups={};
@@ -661,7 +666,6 @@ function rSched(){
     (allGroups[k]=allGroups[k]||[]).push(s);
   });
 
-  // Count slots a schedule spans (how many 1-hour rows it covers)
   function spanCount(start,end){
     let c=0;
     for(let i=0;i<SLOTS.length;i++){
@@ -670,62 +674,61 @@ function rSched(){
     return Math.max(1,c);
   }
 
-  // Track occupied per DAY per SLOT INDEX — key: dayIndex_slotIndex
-  const occupied={};
-
-  const rows=SLOTS.map((slot,si)=>{
+  // Build plain table rows — NO rowspan, NO blocks inside cells
+  // Each cell just needs an id so we can find its position
+  const bodyHTML=SLOTS.map((slot,si)=>{
     const eve=tm(slot)>=tm('18:00');
     const tds=DAYS.map((day,di)=>{
-      const occKey=`${di}_${si}`;
-
-      // This cell is covered by a rowspan from a previous row — skip it
-      if(occupied[occKey]) return '';
-
-      // Groups that START at this slot on this day
-      const startingGroups=Object.values(allGroups)
-        .filter(arr=>arr[0].day===day && arr[0].start===slot);
-
-      // Rowspan = max duration among all groups starting here
-      const rowspan=startingGroups.length>0
-        ? Math.max(...startingGroups.map(arr=>spanCount(arr[0].start,arr[0].end)))
-        : 1;
-
-      // Mark future slots in THIS day column as occupied
-      if(rowspan>1){
-        for(let r=1;r<rowspan;r++){
-          occupied[`${di}_${si+r}`]=true;
-        }
-      }
-
-      // Build blocks
-      const blocks=startingGroups.map(arr=>{
-        const g=arr[0];
-        const cnt=new Set(arr.map(x=>x.studentId)).size;
-        const fn=(g.teacher||'').split(' ')[0];
-        const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
-        const span=spanCount(g.start,g.end);
-        const heightStyle=span>1?`min-height:${span*54-10}px;`:'';
-        return`<div class="blk ${cls}" style="${heightStyle}display:flex;flex-direction:column;justify-content:center;" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')">
-          <div class="bn">${fn}</div>
-          <div class="bz">${g.zone}</div>
-          <div class="bc">${cnt} siswa${span>1?' • '+g.start+'–'+g.end:''}</div>
-          ${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}
-        </div>`;
-      }).join('');
-
-      // Wellness break indicator
+      // wellness break indicator only
       let wb='';
       const slotEnd=nh(slot);
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,slotEnd)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,slotEnd));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
-
-      return`<td${rowspan>1?` rowspan="${rowspan}"`:''}style="vertical-align:top;padding:4px 3px;">${wb}${blocks}</td>`;
-    });
-
-    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tds.join('')}</tr>`;
+      return`<td id="cell_${di}_${si}" style="height:${ROW_H}px;vertical-align:top;padding:2px 3px;">${wb}</td>`;
+    }).join('');
+    return`<tr class="${eve?'er':''}"><td class="ttd" style="height:${ROW_H}px;"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tds}</tr>`;
   }).join('');
 
-  document.getElementById('schedBody').innerHTML=rows;
+  document.getElementById('schedBody').innerHTML=bodyHTML;
+
+  // Now overlay floating blocks using absolute positioning
+  // We need the table wrapper to be position:relative
+  const wrap=document.querySelector('.sched-wrap');
+  // Remove old overlays
+  wrap.querySelectorAll('.blk-overlay').forEach(el=>el.remove());
+
+  // Wait one frame for DOM to paint so we can read cell positions
+  requestAnimationFrame(()=>{
+    Object.values(allGroups).forEach(arr=>{
+      const g=arr[0];
+      const cnt=new Set(arr.map(x=>x.studentId)).size;
+      const di=DAYS.indexOf(g.day);
+      const si=SLOTS.indexOf(g.start);
+      if(di<0||si<0)return;
+
+      const cell=document.getElementById(`cell_${di}_${si}`);
+      if(!cell)return;
+
+      const span=spanCount(g.start,g.end);
+      const cellRect=cell.getBoundingClientRect();
+      const wrapRect=wrap.getBoundingClientRect();
+
+      const top=cellRect.top-wrapRect.top+wrap.scrollTop+2;
+      const left=cellRect.left-wrapRect.left+wrap.scrollLeft+2;
+      const width=cellRect.width-4;
+      const height=span*ROW_H-6;
+
+      const fn=(g.teacher||'').split(' ')[0];
+      const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
+
+      const div=document.createElement('div');
+      div.className=`blk ${cls} blk-overlay`;
+      div.style.cssText=`position:absolute;top:${top}px;left:${left}px;width:${width}px;height:${height}px;z-index:5;display:flex;flex-direction:column;justify-content:center;margin:0;box-sizing:border-box;overflow:hidden;`;
+      div.innerHTML=`<div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc">${cnt} siswa${span>1?' • '+g.start+'–'+g.end:''}</div>${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}`;
+      div.onclick=()=>openSchedDetail(g.program,g.zone,g.teacher,g.type,g.day,g.start,g.end);
+      wrap.appendChild(div);
+    });
+  });
 }
 
 // ═══════════════════════════════════════
