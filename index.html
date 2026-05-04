@@ -654,69 +654,75 @@ function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value;
 
-  // Build a map: day -> slot -> array of block groups that START at this slot
-  // Also track which cells are "occupied" by a rowspan from above
-  const occupied={}; // key: `${day}|${slot}` -> true
-
-  // Collect all unique groups (program|zone|teacher|type|day|start|end)
+  // Group schedules by unique key
   const allGroups={};
   list.forEach(s=>{
     const k=`${s.program}|${s.zone}|${s.teacher}|${s.type}|${s.day}|${s.start}|${s.end}`;
     (allGroups[k]=allGroups[k]||[]).push(s);
   });
 
-  // For each slot, calculate how many rows a block spans
+  // Count slots a schedule spans (how many 1-hour rows it covers)
   function spanCount(start,end){
-    let count=0;
+    let c=0;
     for(let i=0;i<SLOTS.length;i++){
-      if(tm(SLOTS[i])>=tm(start)&&tm(SLOTS[i])<tm(end))count++;
+      if(tm(SLOTS[i])>=tm(start)&&tm(SLOTS[i])<tm(end))c++;
     }
-    return Math.max(1,count);
+    return Math.max(1,c);
   }
 
-  const rows=SLOTS.map(slot=>{
+  // Track occupied per DAY per SLOT INDEX — key: dayIndex_slotIndex
+  const occupied={};
+
+  const rows=SLOTS.map((slot,si)=>{
     const eve=tm(slot)>=tm('18:00');
-    const tds=DAYS.map(day=>{
-      const cellKey=`${day}|${slot}`;
-      // Skip if occupied by rowspan
-      if(occupied[cellKey]) return null;
+    const tds=DAYS.map((day,di)=>{
+      const occKey=`${di}_${si}`;
 
-      // Find groups starting at this slot for this day
-      const startingGroups=Object.values(allGroups).filter(arr=>arr[0].day===day&&arr[0].start===slot);
-      const spans=startingGroups.map(arr=>spanCount(arr[0].start,arr[0].end));
-      const rowspan=spans.length>0?Math.max(...spans):1;
+      // This cell is covered by a rowspan from a previous row — skip it
+      if(occupied[occKey]) return '';
 
-      // Mark future slots as occupied
+      // Groups that START at this slot on this day
+      const startingGroups=Object.values(allGroups)
+        .filter(arr=>arr[0].day===day && arr[0].start===slot);
+
+      // Rowspan = max duration among all groups starting here
+      const rowspan=startingGroups.length>0
+        ? Math.max(...startingGroups.map(arr=>spanCount(arr[0].start,arr[0].end)))
+        : 1;
+
+      // Mark future slots in THIS day column as occupied
       if(rowspan>1){
-        for(let i=1;i<rowspan;i++){
-          const futureSlot=SLOTS[SLOTS.indexOf(slot)+i];
-          if(futureSlot) occupied[`${day}|${futureSlot}`]=true;
+        for(let r=1;r<rowspan;r++){
+          occupied[`${di}_${si+r}`]=true;
         }
       }
 
+      // Build blocks
       const blocks=startingGroups.map(arr=>{
-        const g=arr[0],cnt=new Set(arr.map(x=>x.studentId)).size,fn=(g.teacher||'').split(' ')[0];
+        const g=arr[0];
+        const cnt=new Set(arr.map(x=>x.studentId)).size;
+        const fn=(g.teacher||'').split(' ')[0];
         const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
         const span=spanCount(g.start,g.end);
-        const height=span>1?`min-height:${span*52-8}px;`:'';
-        return`<div class="blk ${cls}" style="${height}display:flex;flex-direction:column;justify-content:center;" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')">
+        const heightStyle=span>1?`min-height:${span*54-10}px;`:'';
+        return`<div class="blk ${cls}" style="${heightStyle}display:flex;flex-direction:column;justify-content:center;" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')">
           <div class="bn">${fn}</div>
           <div class="bz">${g.zone}</div>
-          <div class="bc">${cnt} siswa ${span>1?`• ${g.start}–${g.end}`:''}</div>
+          <div class="bc">${cnt} siswa${span>1?' • '+g.start+'–'+g.end:''}</div>
           ${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}
         </div>`;
       }).join('');
 
+      // Wellness break indicator
       let wb='';
       const slotEnd=nh(slot);
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,slotEnd)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,slotEnd));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
 
-      return`<td${rowspan>1?` rowspan="${rowspan}"`:''}style="vertical-align:top;">${wb}${blocks}</td>`;
+      return`<td${rowspan>1?` rowspan="${rowspan}"`:''}style="vertical-align:top;padding:4px 3px;">${wb}${blocks}</td>`;
     });
 
-    const tdHtml=tds.map(td=>td===null?'':td).join('');
-    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tdHtml}</tr>`;
+    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tds.join('')}</tr>`;
   }).join('');
 
   document.getElementById('schedBody').innerHTML=rows;
