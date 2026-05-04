@@ -72,7 +72,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 .iBtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bdr);background:var(--surf);color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .iBtn:hover{border-color:var(--acc);color:var(--acc);}
 .iBtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.sched-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--bdr);position:relative;}
+.sched-wrap{overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--bdr);position:relative;}
 .stbl{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;}
 .stbl thead th{background:var(--surf);color:var(--txt3);font-weight:600;padding:9px 5px;text-align:center;border-bottom:1px solid var(--bdr);font-size:10px;white-space:nowrap;letter-spacing:.05em;text-transform:uppercase;}
 .stbl thead th.thd{text-align:left;position:sticky;left:0;z-index:20;background:var(--surf);min-width:58px;padding-left:10px;}
@@ -587,9 +587,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
 async function doRefresh(){await loadData();rAll();rSched();toast('Data diperbarui');}
 
-// Re-render blok overlay saat scroll atau resize agar posisi tetap akurat
 window.addEventListener('resize',()=>rSched());
-document.querySelector('.sched-wrap')?.addEventListener('scroll',()=>rSched());
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelector('.sched-wrap')?.addEventListener('scroll',()=>rSched());
+});
 
 // ═══════════════════════════════════════
 // NAV
@@ -657,9 +658,8 @@ function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])
 
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value;
-  const ROW_H=54; // pixel height per 1-hour row — must match CSS td height
+  const ROW_H=56;
 
-  // Group schedules by unique key
   const allGroups={};
   list.forEach(s=>{
     const k=`${s.program}|${s.zone}|${s.teacher}|${s.type}|${s.day}|${s.start}|${s.end}`;
@@ -674,31 +674,35 @@ function rSched(){
     return Math.max(1,c);
   }
 
-  // Build plain table rows — NO rowspan, NO blocks inside cells
-  // Each cell just needs an id so we can find its position
+  // Build plain table with fixed-height cells, no blocks inside
   const bodyHTML=SLOTS.map((slot,si)=>{
     const eve=tm(slot)>=tm('18:00');
     const tds=DAYS.map((day,di)=>{
-      // wellness break indicator only
       let wb='';
       const slotEnd=nh(slot);
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,slotEnd)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,slotEnd));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
-      return`<td id="cell_${di}_${si}" style="height:${ROW_H}px;vertical-align:top;padding:2px 3px;">${wb}</td>`;
+      return`<td id="cell_${di}_${si}" style="height:${ROW_H}px;min-width:105px;vertical-align:top;padding:2px 3px;">${wb}</td>`;
     }).join('');
     return`<tr class="${eve?'er':''}"><td class="ttd" style="height:${ROW_H}px;"><div class="tl"><span class="ts">${slot}</span><span class="te">${nh(slot)}</span></div></td>${tds}</tr>`;
   }).join('');
 
   document.getElementById('schedBody').innerHTML=bodyHTML;
 
-  // Now overlay floating blocks using absolute positioning
-  // We need the table wrapper to be position:relative
-  const wrap=document.querySelector('.sched-wrap');
   // Remove old overlays
+  const wrap=document.querySelector('.sched-wrap');
   wrap.querySelectorAll('.blk-overlay').forEach(el=>el.remove());
 
-  // Wait one frame for DOM to paint so we can read cell positions
-  requestAnimationFrame(()=>{
+  // Double rAF to ensure layout is complete
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    // Get table position relative to wrap
+    const tbl=wrap.querySelector('.stbl');
+    if(!tbl)return;
+    const tblRect=tbl.getBoundingClientRect();
+    const wrapRect=wrap.getBoundingClientRect();
+    const tblOffsetTop=tblRect.top-wrapRect.top+wrap.scrollTop;
+    const tblOffsetLeft=tblRect.left-wrapRect.left+wrap.scrollLeft;
+
     Object.values(allGroups).forEach(arr=>{
       const g=arr[0];
       const cnt=new Set(arr.map(x=>x.studentId)).size;
@@ -711,11 +715,11 @@ function rSched(){
 
       const span=spanCount(g.start,g.end);
       const cellRect=cell.getBoundingClientRect();
-      const wrapRect=wrap.getBoundingClientRect();
 
+      // Position relative to wrap, accounting for scroll
       const top=cellRect.top-wrapRect.top+wrap.scrollTop+2;
       const left=cellRect.left-wrapRect.left+wrap.scrollLeft+2;
-      const width=cellRect.width-4;
+      const width=cell.offsetWidth-6;
       const height=span*ROW_H-6;
 
       const fn=(g.teacher||'').split(' ')[0];
@@ -723,12 +727,12 @@ function rSched(){
 
       const div=document.createElement('div');
       div.className=`blk ${cls} blk-overlay`;
-      div.style.cssText=`position:absolute;top:${top}px;left:${left}px;width:${width}px;height:${height}px;z-index:5;display:flex;flex-direction:column;justify-content:center;margin:0;box-sizing:border-box;overflow:hidden;`;
+      div.style.cssText=`position:absolute;top:${top}px;left:${left}px;width:${width}px;height:${height}px;z-index:5;display:flex;flex-direction:column;justify-content:center;margin:0;box-sizing:border-box;overflow:hidden;pointer-events:auto;cursor:pointer;`;
       div.innerHTML=`<div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc">${cnt} siswa${span>1?' • '+g.start+'–'+g.end:''}</div>${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}`;
       div.onclick=()=>openSchedDetail(g.program,g.zone,g.teacher,g.type,g.day,g.start,g.end);
       wrap.appendChild(div);
     });
-  });
+  }));
 }
 
 // ═══════════════════════════════════════
