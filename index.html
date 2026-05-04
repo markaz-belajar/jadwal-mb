@@ -23,8 +23,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;z-index:50;}
-.sb-logo{width:32px;height:32px;margin-bottom:10px;cursor:pointer;border-radius:8px;overflow:hidden;}
-.sb-logo img{width:100%;height:100%;object-fit:contain;}
+
+
 .sb-div{width:26px;height:1px;background:var(--bdr);margin:4px 0;}
 .nb{width:38px;height:38px;border-radius:9px;border:none;background:transparent;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative;}
 .nb:hover{background:var(--surf2);color:var(--txt2);}
@@ -222,7 +222,28 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sb-logo" onclick="sw('schedule')"><img src="dAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="tip">Rekap</span>
+  
+  <div class="sb-div"></div>
+  <button class="nb on" id="snb-schedule" onclick="sw('schedule');snbOn(this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tip">Jadwal</span>
+  </button>
+  <button class="nb admin-nb" id="snb-add" onclick="sw('add');snbOn(this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="tip">Tambah Jadwal</span>
+  </button>
+  <button class="nb admin-nb" id="snb-zones" onclick="sw('zones');snbOn(this)">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tip">Zona Kelas</span>
+  </button>
+  <button class="nb admin-nb" id="snb-teachers" onclick="sw('teachers');snbOn(this)">
+    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tip">Guru</span>
+  </button>
+  <button class="nb admin-nb" id="snb-students" onclick="sw('students');snbOn(this)">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="tip">Siswa</span>
+  </button>
+  <button class="nb admin-nb" id="snb-wellness" onclick="sw('wellness');snbOn(this)">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="tip">Wellness Break</span>
+  </button>
+  <button class="nb admin-nb" id="snb-summary" onclick="sw('summary');snbOn(this)">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="tip">Rekap</span>
   </button>
 </aside>
 
