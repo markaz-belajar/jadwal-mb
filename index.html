@@ -23,8 +23,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* SIDEBAR */
 .sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;z-index:50;}
-.sb-logo{width:32px;height:32px;margin-bottom:10px;cursor:pointer;border-radius:8px;overflow:hidden;}
-.sb-logo img{width:100%;height:100%;object-fit:contain;}
+
+
 .sb-div{width:26px;height:1px;background:var(--bdr);margin:4px 0;}
 .nb{width:38px;height:38px;border-radius:9px;border:none;background:transparent;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative;}
 .nb:hover{background:var(--surf2);color:var(--txt2);}
@@ -175,8 +175,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 /* LOGIN */
 .lbox{background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;padding:30px 26px;width:340px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.7);}
-.llogo{text-align:center;margin-bottom:18px;}
-.llogo img{height:46px;}
+
+
 .ltitle{font-size:17px;font-weight:700;color:var(--txt);margin-bottom:3px;text-align:center;}
 .lsub{font-size:12px;color:var(--txt3);text-align:center;margin-bottom:18px;}
 .lerr{color:#ef4444;font-size:12px;margin-top:8px;display:none;text-align:center;}
@@ -222,7 +222,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 
 <!-- SIDEBAR -->
 <aside class="sidebar">
-  <div class="sb-logo" onclick="sw('schedule')"><img src=""></div>
   <div class="sb-div"></div>
   <button class="nb on" id="snb-schedule" onclick="sw('schedule');snbOn(this)">
     <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tip">Jadwal</span>
@@ -370,7 +369,6 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <!-- LOGIN OVERLAY -->
 <div class="ov" id="loginOv">
   <div class="lbox">
-    <div class="llogo"><img src="data:image/png;base64,..." alt="MB"/></div>
     <div class="ltitle">Login Admin</div>
     <div class="lsub">Masukkan kredensial untuk akses panel admin</div>
     <div class="fg" style="margin-bottom:10px;"><div class="fl">Username</div><input type="text" id="lUser" class="inp" placeholder="Username" autocomplete="off"></div>
@@ -653,7 +651,10 @@ function openSchedDetail(program,zone,teacher,type,day,start,end){
 
   // Footer: edit btn only for admin
   document.getElementById('schedModalFooter').innerHTML=isAdmin
-    ?`<button class="btn btn-p" onclick="openEditSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Jadwal</button>`
+    ?`<div style="display:flex;gap:8px;width:100%;justify-content:space-between;">
+       <button class="btn btn-d" onclick="quickDeleteSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus Jadwal</button>
+       <button class="btn btn-p" onclick="openEditSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')"><svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Jadwal</button>
+     </div>`
     :'';
   showOv('schedOv');
 }
@@ -872,6 +873,19 @@ window.toggleStud=async id=>{const i=S.students.findIndex(x=>x.id===id);if(i<0)r
 window.openEditWb=id=>{const h=S.holidays.find(x=>x.id===id);if(!h)return;eWbId=id;const ts=document.getElementById('ewTeach');ts.innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');document.getElementById('ewDay').value=h.day;document.getElementById('ewStart').value=h.start;document.getElementById('ewEnd').value=h.end;showOv('editWbOv');};
 window.doSaveWb=async()=>{if(!eWbId)return hideOv('editWbOv');const teacher=document.getElementById('ewTeach').value,day=document.getElementById('ewDay').value,start=document.getElementById('ewStart').value,end=document.getElementById('ewEnd').value;const idx=S.holidays.findIndex(x=>x.id===eWbId);if(idx>-1){S.holidays[idx]={...S.holidays[idx],teacher,day,start,end};await saveAll();rWb();rSched();toast('Break diperbarui!');}hideOv('editWbOv');eWbId=null;};
 window.deleteWb=async id=>{if(!confirm('Hapus wellness break ini?'))return;S.holidays=S.holidays.filter(x=>x.id!==id);await saveAll();rWb();rSched();toast('Break dihapus!');};
+
+
+// ═══════════════════════════════════════
+// QUICK DELETE SCHEDULE
+// ═══════════════════════════════════════
+async function quickDeleteSched(program,zone,teacher,type,day,start,end){
+  if(!confirm(`Hapus jadwal:\n${zone} • ${teacher}\n${day} ${start}–${end}?`))return;
+  S.schedules=S.schedules.filter(s=>!(
+    s.program===program&&s.zone===zone&&s.teacher===teacher&&
+    s.type===type&&s.day===day&&s.start===start&&s.end===end
+  ));
+  await saveAll();rSched();rSummary();hideOv('schedOv');toast('Jadwal dihapus!');
+}
 
 // ═══════════════════════════════════════
 // TOAST
