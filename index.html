@@ -1,404 +1,526 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Markaz Belajar</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Jadwal — Markaz Belajar</title>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="theme-color" content="#1B6CA8"/>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+
+/* ── TOKENS ── */
 :root{
-  --bg:#080d1a;--surf:#0f1829;--surf2:#111f35;--surf3:#162340;
-  --bdr:#1b2d48;--bdr2:#223758;
-  --txt:#dde6f0;--txt2:#7a99b8;--txt3:#3d5570;
-  --acc:#3b82f6;--acc2:#1d4ed8;
-  --gold:#d4a853;--grn:#10b981;--red:#ef4444;
-  --pre:#8b6012;--pre2:#6b4a0c;--ele:#1b4f7a;--ele2:#133b60;
-  --sidebar:52px;
-  --font:"DM Sans",system-ui,sans-serif;
-  --mono:"DM Mono",monospace;
+  --blue:#1B6CA8;--blue-mid:#4DA3D4;--blue-light:#E8F4FD;
+  --yellow:#f3d565;--yellow-deep:#F59F00;
+  --green:#2E9E5B;--green-light:#E6F7EE;
+  --amber:#F59F00;--amber-light:#FFF8DC;
+  --red:#E03434;--red-light:#FEE8E8;
+  --paper:#FDFAF4;--line:#EDE9DF;
+  --ink:#1C2B3A;--ink-mid:#4A6070;--ink-faint:#8FA4B4;
+  --white:#FFFFFF;--surface:#FFFFFF;
+  --surface2:#F5F0E8;
+  --shadow:0 4px 24px rgba(28,43,58,0.12);
+  --shadow-sm:0 2px 10px rgba(28,43,58,0.07);
+  --radius:20px;--radius-sm:14px;--radius-xs:10px;
+  --font-display:'Baloo 2',sans-serif;
+  --font:'Plus Jakarta Sans',sans-serif;
+  --mono:'SF Mono','Fira Mono',monospace;
+  --header-h:156px;
 }
-html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--txt);font-size:14px;}
-.app{display:flex;height:100vh;overflow:hidden;}
-.sidebar{width:var(--sidebar);min-width:var(--sidebar);background:var(--surf);border-right:1px solid var(--bdr);display:flex;flex-direction:column;align-items:center;padding:10px 0;gap:2px;z-index:50;}
-.sb-div{width:26px;height:1px;background:var(--bdr);margin:4px 0;}
-.nb{width:38px;height:38px;border-radius:9px;border:none;background:transparent;color:var(--txt3);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;position:relative;}
-.nb:hover{background:var(--surf2);color:var(--txt2);}
-.nb.on{background:rgba(59,130,246,.15);color:var(--acc);}
-.nb svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.tip{position:absolute;left:calc(100% + 8px);top:50%;transform:translateY(-50%);background:var(--surf2);border:1px solid var(--bdr2);color:var(--txt);padding:4px 10px;border-radius:6px;font-size:11px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:999;}
-.nb:hover .tip{opacity:1;}
-.admin-nb{display:none;}
-.admin-nb.vis{display:flex;}
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-/* TOPBAR — wrap on mobile */
-.topbar{min-height:50px;background:var(--surf);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 16px;gap:6px;flex-wrap:wrap;}
-.ttab{padding:6px 13px;border-radius:8px;border:none;background:transparent;color:var(--txt3);cursor:pointer;font-size:12.5px;font-family:var(--font);white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:5px;font-weight:500;}
-.ttab svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.ttab:hover{background:var(--surf2);color:var(--txt2);}
-.ttab.on{background:rgba(59,130,246,.13);color:var(--acc);}
-.ttab.adm{display:none;}
-.ttab.adm.vis{display:flex;}
-.tb-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
-.abadge{display:none;background:rgba(59,130,246,.15);color:var(--acc);border:1px solid rgba(59,130,246,.3);border-radius:6px;padding:3px 9px;font-size:11px;font-weight:600;}
-.login-btn{padding:6px 13px;border-radius:8px;border:1px solid var(--bdr2);background:transparent;color:var(--txt2);cursor:pointer;font-size:12px;font-family:var(--font);display:flex;align-items:center;gap:5px;transition:all .15s;}
-.login-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.login-btn:hover{border-color:var(--acc);color:var(--acc);}
-/* PERBAIKAN 3: logout-btn pakai display:none, set via JS ke flex — tidak di-override CSS mobile */
-.logout-btn{padding:6px 13px;border-radius:8px;border:1px solid rgba(239,68,68,.25);background:transparent;color:#ef4444;cursor:pointer;font-size:12px;font-family:var(--font);display:none;align-items:center;gap:5px;transition:all .15s;}
-.logout-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.logout-btn:hover{background:rgba(239,68,68,.08);}
-.logout-btn.show{display:flex!important;}
-.content{flex:1;overflow-y:auto;padding:18px;}
+
+[data-theme="dark"]{
+  --paper:#111820;--line:#1E2D3D;
+  --ink:#DDE6F0;--ink-mid:#7A99B8;--ink-faint:#3D5570;
+  --white:#162230;--surface:#162230;--surface2:#0F1829;
+  --blue-light:rgba(27,108,168,0.18);
+  --green-light:rgba(46,158,91,0.15);
+  --amber-light:rgba(245,159,0,0.12);
+  --red-light:rgba(224,52,52,0.12);
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --shadow-sm:0 2px 10px rgba(0,0,0,0.3);
+}
+
+html,body{height:100%;font-family:var(--font);background:var(--paper);color:var(--ink);}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;background:var(--blue);display:flex;align-items:center;justify-content:center;z-index:9999;}
+#splash.hidden{display:none;}
+#splash img{width:130px;animation:lev 1.8s ease-in-out infinite;}
+@keyframes lev{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+
+/* ── PAGE ── */
+.page{max-width:480px;margin:0 auto;min-height:100vh;background:var(--paper);position:relative;overflow-x:hidden;padding-bottom:32px;}
+
+/* ── HEADER ── */
+.header{background:var(--blue);position:relative;overflow:hidden;}
+.hbs{position:absolute;border-radius:50%;pointer-events:none;}
+.hbs-1{top:-30px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,0.07);}
+.hbs-2{bottom:-50px;left:-30px;width:130px;height:130px;background:rgba(243,213,101,0.12);}
+.hbs-3{top:40px;left:30%;width:50px;height:50px;background:rgba(255,255,255,0.05);}
+
+.header-inner{position:relative;z-index:2;padding:36px 20px 56px;display:flex;flex-direction:column;align-items:center;}
+.header-logo{width:90px;}
+
+/* ── GREETING CARD ── */
+.greeting-wrap{margin:0 16px;margin-top:-32px;position:relative;z-index:10;}
+.greeting-card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.greeting-card h2{font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--ink);line-height:1.2;}
+.greeting-card p{font-size:11px;color:var(--ink-faint);margin-top:3px;}
+.greeting-right{display:flex;align-items:center;gap:8px;}
+.greeting-badge{background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:600;padding:5px 12px;border-radius:50px;white-space:nowrap;}
+
+/* ── DARK MODE TOGGLE ── */
+.dm-toggle{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface2);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.dm-toggle svg{width:16px;height:16px;stroke:var(--ink-mid);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── PILL TABS ── */
+.tab-wrap{padding:18px 16px 0;}
+.tab-bar{background:var(--surface2);border-radius:50px;padding:4px;display:flex;gap:2px;border:1.5px solid var(--line);}
+.tab-btn{flex:1;padding:9px 0;border:none;background:transparent;border-radius:50px;font-family:var(--font);font-size:13px;font-weight:600;color:var(--ink-faint);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;}
+.tab-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.tab-btn.on{background:var(--blue);color:#fff;box-shadow:0 2px 8px rgba(27,108,168,0.25);}
+.tab-btn.adm{display:none;}
+.tab-btn.adm.vis{display:flex;}
+
+/* ── CONTENT AREA ── */
+.content{padding:16px;}
 .view{display:none;}
 .view.on{display:block;}
-.card{background:var(--surf);border:1px solid var(--bdr);border-radius:12px;padding:16px;margin-bottom:12px;}
-.ctitle{font-size:13px;font-weight:600;color:var(--txt);margin-bottom:14px;display:flex;align-items:center;gap:7px;}
-.ctitle svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;color:var(--txt3);}
-.sched-filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center;}
-.sel-sm{background:var(--surf);border:1px solid var(--bdr);color:var(--txt);padding:7px 10px;border-radius:8px;font-size:12px;font-family:var(--font);flex:1;min-width:110px;max-width:170px;}
-.sel-sm:focus{outline:none;border-color:var(--acc);}
-.iBtn{width:34px;height:34px;border-radius:8px;border:1px solid var(--bdr);background:var(--surf);color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.iBtn:hover{border-color:var(--acc);color:var(--acc);}
-.iBtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.sched-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:10px;border:1px solid var(--bdr);}
+
+/* ── FILTERS ── */
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.sel-pill{flex:1;min-width:110px;background:var(--surface);border:1.5px solid var(--line);color:var(--ink);padding:9px 12px;border-radius:50px;font-size:12px;font-family:var(--font);font-weight:500;-webkit-appearance:none;}
+.sel-pill:focus{outline:none;border-color:var(--blue);}
+.sel-pill option{background:var(--surface);}
+.icon-btn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.icon-btn:active{background:var(--blue-light);border-color:var(--blue);color:var(--blue);}
+.icon-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── SCHEDULE TABLE ── */
+.sched-wrap{border-radius:var(--radius-sm);border:1.5px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--surface);}
 .stbl{width:100%;border-collapse:separate;border-spacing:0;font-size:11px;}
-.stbl thead th{background:var(--surf);color:var(--txt3);font-weight:600;padding:9px 5px;text-align:center;border-bottom:1px solid var(--bdr);font-size:10px;white-space:nowrap;letter-spacing:.05em;text-transform:uppercase;}
-.stbl thead th.thd{text-align:left;position:sticky;left:0;z-index:20;background:var(--surf);min-width:58px;padding-left:10px;}
-.stbl tbody td{border-top:1px solid var(--bdr);padding:4px 3px;vertical-align:top;min-width:105px;}
-.stbl tbody td.ttd{position:sticky;left:0;z-index:10;background:var(--surf2);padding:7px 8px;min-width:58px;}
-.er td{background:rgba(8,13,26,.7);}
-.er .ttd{background:rgba(8,13,26,.85);}
+.stbl thead th{background:var(--surface2);color:var(--ink-faint);font-weight:700;padding:10px 5px;text-align:center;border-bottom:1.5px solid var(--line);font-size:10px;white-space:nowrap;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font);}
+.stbl thead th.thd{text-align:left;position:sticky;left:0;z-index:20;background:var(--surface2);min-width:56px;padding-left:10px;}
+.stbl tbody td{border-top:1px solid var(--line);padding:4px 3px;vertical-align:top;min-width:108px;}
+.stbl tbody td.ttd{position:sticky;left:0;z-index:10;background:var(--surface2);padding:7px 8px;min-width:56px;}
+.er td{background:rgba(27,108,168,0.03);}
+.er .ttd{background:rgba(27,108,168,0.05);}
 .tl{display:flex;flex-direction:column;gap:1px;}
-.ts{font-weight:600;color:var(--txt);font-size:12px;font-family:var(--mono);}
-.te{color:var(--txt3);font-size:10px;font-family:var(--mono);}
-.blk{border-radius:8px;padding:6px 7px;margin-bottom:3px;cursor:pointer;transition:all .15s;font-size:11px;line-height:1.35;}
-.blk:hover{transform:translateY(-1px);filter:brightness(1.12);}
-.blk:active{transform:scale(.97);}
-.pr{background:linear-gradient(135deg,var(--pre),var(--pre2));color:#fef3c7;}
-.pp{background:linear-gradient(135deg,var(--pre),var(--pre2));color:#fef3c7;box-shadow:inset 0 0 0 2px #ef4444;}
-.er2{background:linear-gradient(135deg,var(--ele),var(--ele2));color:#dbeafe;}
-.ep{background:linear-gradient(135deg,var(--ele),var(--ele2));color:#dbeafe;box-shadow:inset 0 0 0 2px #ef4444;}
+.ts{font-weight:700;color:var(--ink);font-size:12px;font-family:var(--mono);}
+.te{color:var(--ink-faint);font-size:10px;font-family:var(--mono);}
+
+/* ── BLOCKS ── */
+.blk{border-radius:10px;padding:7px 8px;margin-bottom:3px;cursor:pointer;font-size:11px;line-height:1.35;border:1.5px solid transparent;}
+.blk:active{transform:scale(0.97);}
+.blk-cont{border-radius:10px;padding:7px 8px;margin-bottom:3px;cursor:pointer;font-size:11px;line-height:1.35;opacity:.75;border-top:2px dashed rgba(255,255,255,.25);}
+
+/* preschool regular */
+.pr{background:linear-gradient(135deg,#8B6012,#6B4A0C);color:#FEF3C7;border-color:rgba(139,96,18,0.3);}
+/* preschool private */
+.pp{background:linear-gradient(135deg,#8B6012,#6B4A0C);color:#FEF3C7;box-shadow:inset 0 0 0 2px #E03434;}
+/* elementary regular */
+.er2{background:linear-gradient(135deg,#1B6CA8,#134F82);color:#DBEAFE;}
+/* elementary private */
+.ep{background:linear-gradient(135deg,#1B6CA8,#134F82);color:#DBEAFE;box-shadow:inset 0 0 0 2px #E03434;}
+
 .bn{font-weight:700;font-size:11px;}
 .bz{font-size:10px;opacity:.8;margin-top:1px;}
-.bc{display:inline-flex;align-items:center;font-size:10px;background:rgba(0,0,0,.22);border-radius:4px;padding:1px 5px;margin-top:2px;}
-.bpv{font-size:9px;font-weight:700;letter-spacing:.06em;margin-top:2px;color:#fca5a5;}
-.wb-p{display:inline-flex;align-items:center;background:rgba(239,68,68,.13);color:#fca5a5;border:1px solid rgba(239,68,68,.28);border-radius:5px;padding:1px 6px;font-size:9px;margin:0 2px 2px 0;}
-.blk-cont{border-radius:8px;padding:6px 7px;margin-bottom:3px;cursor:pointer;transition:all .15s;font-size:11px;line-height:1.35;opacity:.82;border-top:2px dashed rgba(255,255,255,.18);}
-.blk-cont:hover{transform:translateY(-1px);filter:brightness(1.12);}
+.bc{display:inline-flex;align-items:center;font-size:10px;background:rgba(0,0,0,.2);border-radius:4px;padding:1px 5px;margin-top:2px;}
+.bpv{font-size:9px;font-weight:700;letter-spacing:.06em;margin-top:2px;color:#FCA5A5;}
+.wb-p{display:inline-flex;align-items:center;background:rgba(224,52,52,0.15);color:#E03434;border:1px solid rgba(224,52,52,0.3);border-radius:5px;padding:1px 6px;font-size:9px;margin:0 2px 2px 0;}
+
+/* ── CARDS ── */
+.card{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);}
+.ctitle{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--ink);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.ctitle svg{width:15px;height:15px;stroke:var(--blue);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── FORM ELEMENTS ── */
 .fg{display:flex;flex-direction:column;gap:5px;}
-.fl{font-size:11px;color:var(--txt3);font-weight:500;letter-spacing:.05em;text-transform:uppercase;}
-.inp{background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);padding:9px 12px;border-radius:8px;font-family:var(--font);font-size:13px;width:100%;}
-.inp:focus{outline:none;border-color:var(--acc);}
-.inp option{background:var(--surf);}
+.fl{font-size:10px;font-weight:700;color:var(--ink-faint);letter-spacing:.06em;text-transform:uppercase;}
+.inp{background:var(--surface2);border:1.5px solid var(--line);color:var(--ink);padding:10px 14px;border-radius:var(--radius-xs);font-family:var(--font);font-size:13px;width:100%;}
+.inp:focus{outline:none;border-color:var(--blue);}
+.inp option{background:var(--surface);}
 .gr2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .gr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
 .gr4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+
+/* choice pills */
 .sw{display:flex;flex-wrap:wrap;gap:6px;}
-.sb2{padding:7px 14px;border-radius:8px;border:1px solid var(--bdr);background:var(--surf2);color:var(--txt2);cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s;}
-.sb2:hover{border-color:var(--bdr2);color:var(--txt);}
-.sb2.sel{background:rgba(59,130,246,.14);border-color:var(--acc);color:var(--acc);font-weight:500;}
-.day-time-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
-.day-time-row{display:flex;align-items:center;gap:8px;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:8px 12px;}
-.day-time-label{font-size:12px;font-weight:600;color:var(--acc);min-width:60px;}
+.sb2{padding:8px 16px;border-radius:50px;border:1.5px solid var(--line);background:var(--surface2);color:var(--ink-mid);cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600;}
+.sb2:active{background:var(--blue-light);}
+.sb2.sel{background:var(--blue);border-color:var(--blue);color:#fff;}
+
+/* day-time rows */
+.day-time-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.day-time-row{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1.5px solid var(--line);border-radius:var(--radius-xs);padding:8px 12px;}
+.day-time-label{font-size:12px;font-weight:700;color:var(--blue);min-width:60px;}
 .day-time-selects{display:flex;align-items:center;gap:6px;flex:1;}
-.day-time-selects select{background:var(--surf);border:1px solid var(--bdr);color:var(--txt);padding:5px 8px;border-radius:6px;font-size:12px;font-family:var(--font);}
-.day-time-selects select:focus{outline:none;border-color:var(--acc);}
-.day-time-sep{color:var(--txt3);font-size:11px;}
-.btn{padding:8px 16px;border-radius:8px;border:1px solid var(--bdr);background:var(--surf2);color:var(--txt);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
-.btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.btn:hover{border-color:var(--bdr2);}
-.btn-p{background:var(--acc);border-color:var(--acc);color:#fff;}
-.btn-p:hover{background:var(--acc2);}
-.btn-d{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#ef4444;}
-.btn-d:hover{background:rgba(239,68,68,.2);}
-.btn-g{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#10b981;}
-.btn-g:hover{background:rgba(16,185,129,.2);}
-.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px;}
-.btn-print{padding:7px 14px;border-radius:8px;border:1px solid var(--bdr2);background:var(--surf);color:var(--txt2);cursor:pointer;font-size:12px;font-family:var(--font);display:inline-flex;align-items:center;gap:6px;transition:all .15s;}
-.btn-print:hover{border-color:var(--gold);color:var(--gold);}
-.btn-print svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
+.day-time-selects select{background:var(--surface);border:1.5px solid var(--line);color:var(--ink);padding:6px 8px;border-radius:8px;font-size:12px;font-family:var(--font);}
+.day-time-selects select:focus{outline:none;border-color:var(--blue);}
+.day-time-sep{color:var(--ink-faint);font-size:11px;}
+
+/* buttons */
+.btn{padding:10px 18px;border-radius:50px;border:1.5px solid var(--line);background:var(--surface2);color:var(--ink);cursor:pointer;font-size:13px;font-family:var(--font);font-weight:600;display:inline-flex;align-items:center;gap:7px;}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.btn-p{background:var(--blue);border-color:var(--blue);color:#fff;}
+.btn-p:active{background:#134F82;}
+.btn-d{background:var(--red-light);border-color:rgba(224,52,52,0.3);color:var(--red);}
+.btn-g{background:var(--green-light);border-color:rgba(46,158,91,0.3);color:var(--green);}
+.btn-sm{padding:5px 12px;font-size:11px;border-radius:50px;}
+.btn-print{padding:8px 16px;border-radius:50px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink-mid);cursor:pointer;font-size:12px;font-family:var(--font);font-weight:600;display:inline-flex;align-items:center;gap:6px;}
+.btn-print svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.btn-print:active{border-color:var(--amber);color:var(--amber);}
+
+/* ── DATA TABLE ── */
 .dtbl{width:100%;border-collapse:collapse;font-size:12px;}
-.dtbl th{text-align:left;padding:8px 10px;color:var(--txt3);border-bottom:1px solid var(--bdr);font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase;}
-.dtbl td{padding:9px 10px;border-bottom:1px solid rgba(27,45,72,.5);vertical-align:middle;}
+.dtbl th{text-align:left;padding:8px 10px;color:var(--ink-faint);border-bottom:1.5px solid var(--line);font-weight:700;font-size:10px;letter-spacing:.06em;text-transform:uppercase;}
+.dtbl td{padding:10px 10px;border-bottom:1px solid rgba(237,233,223,0.6);vertical-align:middle;}
 .dtbl tr:last-child td{border-bottom:none;}
-.chip{display:inline-flex;align-items:center;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:500;}
-.cg{background:rgba(16,185,129,.1);color:#10b981;border:1px solid rgba(16,185,129,.25);}
-.cGray{background:rgba(100,120,140,.08);color:var(--txt3);border:1px solid var(--bdr);}
-.prev-box{background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--txt3);min-height:36px;}
-/* PERBAIKAN 1: student count bar */
+
+/* chips */
+.chip{display:inline-flex;align-items:center;padding:3px 10px;border-radius:50px;font-size:11px;font-weight:600;}
+.cg{background:var(--green-light);color:var(--green);border:1px solid rgba(46,158,91,0.25);}
+.cGray{background:var(--surface2);color:var(--ink-faint);border:1px solid var(--line);}
+
+/* preview box */
+.prev-box{background:var(--surface2);border:1.5px solid var(--line);border-radius:var(--radius-xs);padding:10px 14px;font-size:12px;color:var(--ink-faint);min-height:38px;line-height:1.5;}
+
+/* ── STUDENT COUNT BAR ── */
 .stud-total-bar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
-.stud-total-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.22);color:var(--acc);border-radius:8px;padding:5px 13px;font-size:12px;font-weight:600;}
-.stud-total-badge svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;}
-.stud-prog-badge{display:inline-flex;align-items:center;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:500;}
-.stud-prog-pre{background:rgba(139,96,18,.15);color:#d4a853;border:1px solid rgba(139,96,18,.3);}
-.stud-prog-ele{background:rgba(27,79,122,.2);color:#7ab3e0;border:1px solid rgba(27,79,122,.4);}
-/* WELLNESS INFO */
-.wb-info{font-size:12px;color:var(--txt3);margin-bottom:12px;padding:10px 13px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.15);border-left:3px solid var(--acc);border-radius:0 8px 8px 0;line-height:1.6;}
-.wb-info strong{color:var(--txt2);}
-.wb-opt-label{font-style:italic;color:var(--txt3);font-size:10px;margin-left:4px;}
-.ov{position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.stud-total-badge{display:inline-flex;align-items:center;gap:6px;background:var(--blue-light);border:1.5px solid rgba(27,108,168,0.2);color:var(--blue);border-radius:50px;padding:5px 14px;font-size:12px;font-weight:700;}
+.stud-total-badge svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;}
+.stud-prog-pre{background:var(--amber-light);color:var(--amber);border:1px solid rgba(245,159,0,0.3);}
+.stud-prog-ele{background:var(--blue-light);color:var(--blue);border:1px solid rgba(27,108,168,0.25);}
+.stud-prog-badge{display:inline-flex;align-items:center;border-radius:50px;padding:4px 12px;font-size:11px;font-weight:600;}
+
+/* ── WELLNESS INFO ── */
+.wb-info{font-size:12px;color:var(--ink-mid);margin-bottom:12px;padding:10px 14px;background:var(--blue-light);border-left:3px solid var(--blue);border-radius:0 var(--radius-xs) var(--radius-xs) 0;line-height:1.6;}
+.wb-info strong{color:var(--ink);}
+.wb-opt-label{font-style:italic;color:var(--ink-faint);font-size:10px;margin-left:4px;}
+
+/* ── MODALS ── */
+.ov{position:fixed;inset:0;z-index:300;background:rgba(15,24,40,0.6);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(4px);}
 .ov.show{display:flex;}
-.mbox{background:var(--surf);border:1px solid var(--bdr2);border-radius:14px;width:500px;max-width:95vw;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.7);}
-.mbox.sm{width:380px;}
-.mbox.lg{width:580px;}
-.mhdr{padding:16px 18px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surf);z-index:10;border-radius:14px 14px 0 0;}
-.mtitle{font-size:14px;font-weight:600;color:var(--txt);}
-.mclose{width:26px;height:26px;border-radius:6px;border:none;background:var(--surf2);color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;}
-.mclose:hover{background:rgba(239,68,68,.15);color:#ef4444;}
+.mbox{background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;box-shadow:0 -8px 40px rgba(0,0,0,0.2);}
+.mbox.sm{width:100%;max-width:480px;}
+.mbox.lg{width:100%;max-width:480px;}
+.mhdr{padding:18px 20px 14px;border-bottom:1.5px solid var(--line);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface);z-index:10;border-radius:var(--radius) var(--radius) 0 0;}
+.mtitle{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--ink);}
+.mclose{width:28px;height:28px;border-radius:50%;border:none;background:var(--surface2);color:var(--ink-mid);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.mclose:active{background:var(--red-light);color:var(--red);}
 .mclose svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;}
-.mbody{padding:16px 18px;}
-.mfoot{padding:12px 18px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:8px;}
-.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:12px;}
-.di label{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:2px;}
-.di span{font-size:13px;color:var(--txt);font-weight:500;}
+.mbody{padding:18px 20px;}
+.mfoot{padding:14px 20px;border-top:1.5px solid var(--line);display:flex;justify-content:flex-end;gap:8px;}
+
+/* modal detail grid */
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;margin-bottom:14px;}
+.di label{font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:2px;font-weight:600;}
+.di span{font-size:13px;color:var(--ink);font-weight:600;}
 .slist{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
-.schip{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surf2);border:1px solid var(--bdr);border-radius:8px;cursor:pointer;transition:all .15s;}
-.schip:hover{border-color:var(--acc);background:rgba(59,130,246,.06);}
-.schip-name{font-size:12px;color:var(--txt);font-weight:500;}
-.schip-meta{font-size:11px;color:var(--txt3);}
-.schip-arr svg{width:11px;height:11px;stroke:var(--txt3);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
-.lbox{background:var(--surf);border:1px solid var(--bdr2);border-radius:16px;padding:30px 26px;width:340px;max-width:92vw;box-shadow:0 24px 64px rgba(0,0,0,.7);}
-.ltitle{font-size:17px;font-weight:700;color:var(--txt);margin-bottom:3px;text-align:center;}
-.lsub{font-size:12px;color:var(--txt3);text-align:center;margin-bottom:18px;}
-.lerr{color:#ef4444;font-size:12px;margin-top:8px;display:none;text-align:center;}
-#LS{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
-.spin{width:28px;height:28px;border:2px solid var(--bdr2);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite;}
+.schip{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--line);border-radius:var(--radius-xs);cursor:pointer;}
+.schip:active{border-color:var(--blue);background:var(--blue-light);}
+.schip-name{font-size:12px;color:var(--ink);font-weight:600;}
+.schip-meta{font-size:11px;color:var(--ink-faint);}
+.schip-arr svg{width:12px;height:12px;stroke:var(--ink-faint);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+
+/* ── LOGIN BOX ── */
+.lbox{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:30px 24px;width:100%;max-width:480px;box-shadow:0 -8px 40px rgba(0,0,0,.2);}
+.ltitle{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--ink);margin-bottom:3px;text-align:center;}
+.lsub{font-size:12px;color:var(--ink-faint);text-align:center;margin-bottom:20px;}
+.lerr{color:var(--red);font-size:12px;margin-top:8px;display:none;text-align:center;}
+
+/* ── LOADING ── */
+#LS{position:fixed;inset:0;background:var(--paper);z-index:9998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;}
+.spin{width:28px;height:28px;border:2px solid var(--line);border-top-color:var(--blue);border-radius:50%;animation:sp .7s linear infinite;}
 @keyframes sp{to{transform:rotate(360deg)}}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);padding:9px 20px;border-radius:9px;font-size:13px;color:#fff;z-index:9998;box-shadow:0 4px 20px rgba(0,0,0,.5);pointer-events:none;}
-@media print{
-  .sidebar,.topbar,.sched-filters,.no-print,#LS{display:none!important;}
-  .content{padding:0!important;}
-  body,.app,.main,.content{height:auto!important;overflow:visible!important;}
-  .card{border:1px solid #ccc;page-break-inside:avoid;}
-  .dtbl th,.dtbl td{color:#000;border-color:#ddd;}
-  .cg{color:#065f46;background:#d1fae5;border:none;}
-  .cGray{color:#374151;background:#f3f4f6;border:none;}
-}
-@media(max-width:680px){
-  .sidebar{width:42px;min-width:42px;}
-  .content{padding:10px;}
-  .stbl tbody td{min-width:78px;}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 22px;border-radius:50px;font-size:13px;font-weight:600;color:#fff;z-index:9998;box-shadow:0 4px 20px rgba(0,0,0,.3);pointer-events:none;}
+
+/* ── IMPORT PREVIEW ── */
+#importPreview{display:none;}
+.import-scroll{overflow-x:auto;max-height:220px;overflow-y:auto;border:1.5px solid var(--line);border-radius:var(--radius-xs);}
+
+/* ── SUGGEST DROPDOWN ── */
+#nameSuggest{display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius-xs);z-index:50;max-height:180px;overflow-y:auto;box-shadow:var(--shadow);}
+
+/* ── SUMMARY ── */
+.sum-row-pre{border-left:3px solid var(--amber);}
+.sum-row-ele{border-left:3px solid var(--blue);}
+
+/* ── RESPONSIVE ── */
+@media(max-width:400px){
   .gr3,.gr4{grid-template-columns:1fr 1fr;}
   .gr2{grid-template-columns:1fr;}
-  .ttab span{display:none;}
-  .topbar{padding:6px 8px;}
 }
-@media(max-width:440px){
-  .gr2,.gr3,.gr4{grid-template-columns:1fr;}
+
+@media print{
+  #splash,#LS,.tab-wrap,.filters,.no-print{display:none!important;}
+  .content{padding:0!important;}
+  body,.page,.content{height:auto!important;overflow:visible!important;}
+  .card{border:1px solid #ccc;}
 }
-  #mb-splash{position:fixed;inset:0;background:#1B6CA8;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .5s ease,visibility .5s ease;}
-#mb-splash.hide{opacity:0;visibility:hidden;pointer-events:none;}
-#mb-splash img{width:130px;animation:mb-lev 1.8s ease-in-out infinite;}
-@keyframes mb-lev{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
 </style>
 </head>
 <body>
 
-<div id="mb-splash"><img src="Open_MB_Icon.png" alt="Markaz Belajar"></div>
-<script>window.addEventListener("load",function(){setTimeout(function(){var s=document.getElementById("mb-splash");if(s)s.classList.add("hide");},2000);});</script>  
-<div id="LS"><div class="spin"></div><div style="color:var(--txt3);font-size:11px;letter-spacing:.07em;">MEMUAT DATA…</div></div>
+<!-- SPLASH -->
+<div id="splash"><img src="Open_MB_Icon.png" alt="Markaz Belajar"/></div>
 
-<div class="app">
-<aside class="sidebar">
-  <div class="sb-div"></div>
-  <button class="nb on" id="snb-schedule" onclick="sw('schedule');snbOn(this)">
-    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="tip">Jadwal</span>
-  </button>
-  <button class="nb" id="snb-summary" onclick="sw('summary');snbOn(this)">
-    <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="tip">Rekap</span>
-  </button>
-  <button class="nb admin-nb" id="snb-add" onclick="sw('add');snbOn(this)">
-    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span class="tip">Tambah Jadwal</span>
-  </button>
-  <button class="nb admin-nb" id="snb-zones" onclick="sw('zones');snbOn(this)">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span class="tip">Zona Kelas</span>
-  </button>
-  <button class="nb admin-nb" id="snb-teachers" onclick="sw('teachers');snbOn(this)">
-    <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span class="tip">Guru</span>
-  </button>
-  <button class="nb admin-nb" id="snb-students" onclick="sw('students');snbOn(this)">
-    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="tip">Siswa</span>
-  </button>
-  <button class="nb admin-nb" id="snb-wellness" onclick="sw('wellness');snbOn(this)">
-    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="tip">Wellness Break</span>
-  </button>
-</aside>
+<!-- LOADING -->
+<div id="LS"><div class="spin"></div><div style="color:var(--ink-faint);font-size:11px;letter-spacing:.07em;font-family:var(--font);">MEMUAT DATA…</div></div>
 
-<div class="main">
-<div class="topbar">
-  <button class="ttab on" id="tnb-schedule" onclick="sw('schedule');tnbOn(this)"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>Jadwal</span></button>
-  <button class="ttab" id="tnb-summary" onclick="sw('summary');tnbOn(this)"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>Rekap</span></button>
-  <button class="ttab adm" id="tnb-add" onclick="sw('add');tnbOn(this)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg><span>Tambah Jadwal</span></button>
-  <button class="ttab adm" id="tnb-zones" onclick="sw('zones');tnbOn(this)"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg><span>Zona</span></button>
-  <button class="ttab adm" id="tnb-teachers" onclick="sw('teachers');tnbOn(this)"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>Guru</span></button>
-  <button class="ttab adm" id="tnb-students" onclick="sw('students');tnbOn(this)"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Siswa</span></button>
-  <button class="ttab adm" id="tnb-wellness" onclick="sw('wellness');tnbOn(this)"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>Wellness</span></button>
-  <div class="tb-right">
-    <span class="abadge" id="adminBadge">Admin</span>
-    <button class="login-btn" id="loginBtn" onclick="showOv('loginOv')"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Login Admin</button>
-    <button class="logout-btn" id="logoutBtn" onclick="doLogout()"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button>
-  </div>
-</div>
+<div class="page">
 
-<div class="content">
-
-<!-- JADWAL -->
-<div class="view on" id="view-schedule">
-  <div class="sched-filters no-print">
-    <select id="fTeacher" class="sel-sm" onchange="rSched()"><option value="">Semua Guru</option></select>
-    <select id="fProgram" class="sel-sm" onchange="rSched()"><option value="">Semua Program</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select>
-    <select id="fType" class="sel-sm" onchange="rSched()"><option value="">Semua Jenis</option><option value="regular">Reguler</option><option value="private">Private</option></select>
-    <button class="iBtn" onclick="doRefresh()" title="Refresh"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg></button>
-  </div>
-  <div class="sched-wrap">
-    <table class="stbl">
-      <thead><tr><th class="thd">Waktu</th><th>Senin</th><th>Selasa</th><th>Rabu</th><th>Kamis</th><th>Jumat</th><th>Sabtu</th><th>Minggu</th></tr></thead>
-      <tbody id="schedBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<!-- TAMBAH JADWAL -->
-<div class="view" id="view-add">
-<div class="card">
-  <div class="ctitle"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>Tambah Jadwal Baru</div>
-  <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:6px;">1. Program</div><div class="sw" id="progWrap"><button class="sb2 bprog" data-v="preschool">Preschool</button><button class="sb2 bprog" data-v="elementary">Elementary</button></div></div>
-  <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:6px;">2. Jenis Kelas</div><div class="sw" id="typeWrap"><button class="sb2 btype" data-v="regular">Reguler (maks 6)</button><button class="sb2 btype" data-v="private">Private</button></div></div>
-  <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:6px;">3. Zona Kelas</div><div class="sw" id="zoneWrap"></div></div>
-  <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:6px;">4. Guru</div><div class="sw" id="teachWrap"></div></div>
-  <div style="margin-bottom:8px;">
-    <div class="fl" style="margin-bottom:6px;">5. Hari & Jam (setiap hari bisa jam berbeda)</div>
-    <div class="sw" id="dayBtns">
-      <button class="sb2 bday" data-v="Senin">Senin</button><button class="sb2 bday" data-v="Selasa">Selasa</button><button class="sb2 bday" data-v="Rabu">Rabu</button><button class="sb2 bday" data-v="Kamis">Kamis</button><button class="sb2 bday" data-v="Jumat">Jumat</button><button class="sb2 bday" data-v="Sabtu">Sabtu</button><button class="sb2 bday" data-v="Minggu">Minggu</button>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="hbs hbs-1"></div>
+    <div class="hbs hbs-2"></div>
+    <div class="hbs hbs-3"></div>
+    <div class="header-inner">
+      <img class="header-logo" src="Open_MB_Icon.png" alt="Markaz Belajar"/>
     </div>
-    <div class="day-time-list" id="dayTimeList"></div>
   </div>
-  <div class="prev-box" id="prevBox" style="margin-bottom:14px;">Pilih Program & Zona untuk melihat siswa aktif…</div>
-  <div style="display:flex;gap:8px;">
-    <button class="btn btn-p" onclick="onSaveSched()"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Simpan Jadwal</button>
-    <button class="btn" onclick="resetForm()">Reset</button>
-  </div>
-</div>
-</div>
 
-<!-- ZONA -->
-<div class="view" id="view-zones">
-  <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Tambah Zona</div>
-    <form id="zoneForm"><div class="gr3"><div class="fg"><div class="fl">Program</div><select id="zProg" class="inp"><option value="">Pilih</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select></div><div class="fg"><div class="fl">Nama Zona</div><input id="zName" class="inp" placeholder="mis. R1-A"></div><div class="fg"><div class="fl">&nbsp;</div><button type="submit" class="btn btn-g" style="width:100%;"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah</button></div></div></form>
-  </div>
-  <div class="card"><table class="dtbl"><thead><tr><th>Program</th><th>Zona</th><th>Siswa Aktif</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="zonesTbl"></tbody></table></div>
-</div>
-
-<!-- GURU -->
-<div class="view" id="view-teachers">
-  <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Tambah Guru</div>
-    <form id="teachForm"><div class="gr3"><div class="fg"><div class="fl">Nama Guru</div><input id="tName" class="inp" placeholder="Nama lengkap"></div><div class="fg"><div class="fl">Spesialisasi</div><input id="tSpec" class="inp" placeholder="mis. Math & Science"></div><div class="fg"><div class="fl">&nbsp;</div><button type="submit" class="btn btn-g" style="width:100%;"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah</button></div></div></form>
-  </div>
-  <div class="card"><table class="dtbl"><thead><tr><th>Nama</th><th>Spesialisasi</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="teachTbl"></tbody></table></div>
-</div>
-
-<!-- SISWA -->
-<div class="view" id="view-students">
-  <div class="card" style="margin-bottom:12px;">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Import dari Google Spreadsheet</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
-      <button class="btn btn-g" onclick="importFromSheets()" id="importBtn"><svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>Sync dari Spreadsheet</button>
-      <span id="importStatus" style="font-size:12px;color:var(--txt3);">Belum disync</span>
+  <!-- GREETING CARD -->
+  <div class="greeting-wrap">
+    <div class="greeting-card">
+      <div>
+        <h2>Jadwal Belajar</h2>
+        <p id="greetDate">Memuat info…</p>
+      </div>
+      <div class="greeting-right">
+        <div class="greeting-badge" id="adminBadge" style="display:none;">Admin</div>
+        <button class="dm-toggle" onclick="toggleDark()" title="Dark/Light Mode" id="dmBtn">
+          <svg id="dmIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+      </div>
     </div>
-    <div id="importPreview" style="display:none;">
-      <div style="font-size:11px;color:var(--txt3);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Preview — pilih siswa yang ingin ditambahkan</div>
-      <div style="overflow-x:auto;max-height:220px;overflow-y:auto;border:1px solid var(--bdr);border-radius:8px;">
-        <table class="dtbl" id="importPreviewTbl">
-          <thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"> Semua</th><th>Nama</th><th>Program</th><th>Kelas</th></tr></thead>
-          <tbody id="importPreviewBody"></tbody>
+  </div>
+
+  <!-- PILL TABS -->
+  <div class="tab-wrap">
+    <div class="tab-bar">
+      <button class="tab-btn on" id="tnb-schedule" onclick="sw('schedule');tnbOn(this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Jadwal
+      </button>
+      <button class="tab-btn" id="tnb-summary" onclick="sw('summary');tnbOn(this)">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Rekap
+      </button>
+      <button class="tab-btn adm" id="tnb-add" onclick="sw('add');tnbOn(this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Tambah
+      </button>
+      <button class="tab-btn adm" id="tnb-manage" onclick="sw('manage');tnbOn(this)">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93A10 10 0 1 0 4.93 19.07"/></svg>
+        Kelola
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- ═══ JADWAL VIEW ═══ -->
+    <div class="view on" id="view-schedule">
+      <div class="filters no-print">
+        <select id="fTeacher" class="sel-pill" onchange="rSched()"><option value="">Semua Guru</option></select>
+        <select id="fProgram" class="sel-pill" onchange="rSched()">
+          <option value="">Semua Program</option>
+          <option value="preschool">Preschool</option>
+          <option value="elementary">Elementary</option>
+        </select>
+        <select id="fType" class="sel-pill" onchange="rSched()">
+          <option value="">Semua Jenis</option>
+          <option value="regular">Reguler</option>
+          <option value="private">Private</option>
+        </select>
+        <button class="icon-btn" onclick="doRefresh()" title="Refresh">
+          <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+        </button>
+      </div>
+      <div class="sched-wrap">
+        <table class="stbl">
+          <thead><tr><th class="thd">Waktu</th><th>Senin</th><th>Selasa</th><th>Rabu</th><th>Kamis</th><th>Jumat</th><th>Sabtu</th><th>Minggu</th></tr></thead>
+          <tbody id="schedBody"></tbody>
         </table>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
-        <button class="btn btn-g" onclick="confirmImport()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambahkan yang Dipilih</button>
-        <span id="selectedCount" style="font-size:12px;color:var(--txt3);">0 dipilih</span>
+    </div>
+
+    <!-- ═══ REKAP VIEW ═══ -->
+    <div class="view" id="view-summary">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;" class="no-print">
+        <div style="font-family:var(--font-display);font-size:16px;font-weight:800;color:var(--ink);">Rekap Jadwal</div>
+        <button class="btn-print" onclick="window.print()">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Cetak
+        </button>
+      </div>
+      <div class="card">
+        <div class="ctitle">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Kelas Reguler
+        </div>
+        <div style="overflow-x:auto;"><table class="dtbl"><thead><tr><th>Program</th><th>Guru</th><th>Zona</th><th>Siswa</th><th>Hari</th><th>Jam</th></tr></thead><tbody id="sumReg"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="ctitle">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          Kelas Private
+        </div>
+        <div style="overflow-x:auto;"><table class="dtbl"><thead><tr><th>Program</th><th>Guru</th><th>Zona</th><th>Siswa</th><th>Hari</th><th>Jam</th></tr></thead><tbody id="sumPriv"></tbody></table></div>
       </div>
     </div>
-  </div>
-  <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Tambah Siswa Manual</div>
-    <form id="studForm">
-      <div style="position:relative;margin-bottom:10px;">
-        <div class="fl" style="margin-bottom:5px;">NAMA SISWA</div>
-        <input id="sName" class="inp" placeholder="Ketik nama atau pilih dari spreadsheet..." autocomplete="off" oninput="showSuggestions(this.value)">
-        <div id="nameSuggest" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf2);border:1px solid var(--bdr2);border-radius:8px;z-index:50;max-height:180px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.5);"></div>
-      </div>
-      <div class="gr3" style="margin-bottom:10px;">
-        <div class="fg"><div class="fl">Program</div><select id="sProg" class="inp" onchange="updateSZones()"><option value="">Pilih</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select></div>
-        <div class="fg"><div class="fl">Zona</div><select id="sZone" class="inp"><option value="">Pilih Zona</option></select></div>
-        <div class="fg"><div class="fl">Kelas</div><input id="sGrade" class="inp" placeholder="mis. 3"></div>
-      </div>
-      <button type="submit" class="btn btn-g"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Siswa</button>
-    </form>
-  </div>
-  <!-- PERBAIKAN 1: Tabel siswa dengan counter -->
-  <div class="card">
-    <div class="stud-total-bar" id="studTotalBar"></div>
-    <table class="dtbl"><thead><tr><th>Nama</th><th>Program</th><th>Zona</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="studTbl"></tbody></table>
-  </div>
-</div>
 
-<!-- WELLNESS -->
-<div class="view" id="view-wellness">
-  <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Tambah Wellness Break</div>
-    <div class="wb-info">
-      <strong>Apa itu Wellness Break?</strong><br>
-      Digunakan untuk memblokir waktu guru agar tidak bisa dijadwalkan — misalnya karena <strong>mengajar di sekolah</strong>, rapat, atau istirahat. Isi keterangan untuk mencatat alasannya.
+    <!-- ═══ TAMBAH JADWAL (admin) ═══ -->
+    <div class="view" id="view-add">
+      <div class="card">
+        <div class="ctitle">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          Tambah Jadwal Baru
+        </div>
+        <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:7px;">1. Program</div><div class="sw" id="progWrap"><button class="sb2 bprog" data-v="preschool">Preschool</button><button class="sb2 bprog" data-v="elementary">Elementary</button></div></div>
+        <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:7px;">2. Jenis Kelas</div><div class="sw" id="typeWrap"><button class="sb2 btype" data-v="regular">Reguler (maks 6)</button><button class="sb2 btype" data-v="private">Private</button></div></div>
+        <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:7px;">3. Zona Kelas</div><div class="sw" id="zoneWrap"></div></div>
+        <div style="margin-bottom:14px;"><div class="fl" style="margin-bottom:7px;">4. Guru</div><div class="sw" id="teachWrap"></div></div>
+        <div style="margin-bottom:12px;">
+          <div class="fl" style="margin-bottom:7px;">5. Hari & Jam</div>
+          <div class="sw" id="dayBtns">
+            <button class="sb2 bday" data-v="Senin">Senin</button><button class="sb2 bday" data-v="Selasa">Selasa</button><button class="sb2 bday" data-v="Rabu">Rabu</button><button class="sb2 bday" data-v="Kamis">Kamis</button><button class="sb2 bday" data-v="Jumat">Jumat</button><button class="sb2 bday" data-v="Sabtu">Sabtu</button><button class="sb2 bday" data-v="Minggu">Minggu</button>
+          </div>
+          <div class="day-time-list" id="dayTimeList"></div>
+        </div>
+        <div class="prev-box" id="prevBox" style="margin-bottom:16px;">Pilih Program & Zona untuk melihat siswa aktif…</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-p" onclick="onSaveSched()">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Simpan Jadwal
+          </button>
+          <button class="btn" onclick="resetForm()">Reset</button>
+        </div>
+      </div>
     </div>
-    <form id="wbForm">
-      <div class="gr4" style="margin-bottom:10px;">
-        <div class="fg"><div class="fl">Guru</div><select id="wbTeach" class="inp"><option value="">Pilih</option></select></div>
-        <div class="fg"><div class="fl">Hari</div><select id="wbDay" class="inp">
-          <option value="">Pilih</option>
-          <option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option>
-        </select></div>
-        <div class="fg"><div class="fl">Dari</div><select id="wbStart" class="inp"></select></div>
-        <div class="fg"><div class="fl">Sampai</div><select id="wbEnd" class="inp"></select></div>
-      </div>
-      <!-- Keterangan opsional -->
-      <div class="fg" style="margin-bottom:12px;">
-        <div class="fl">Keterangan <span class="wb-opt-label">(opsional — mis. mengajar di SDN 1, rapat, dll.)</span></div>
-        <input id="wbNote" class="inp" placeholder="Contoh: Mengajar di SDIT Al-Amin, Rapat guru, Istirahat siang…">
-      </div>
-      <button type="submit" class="btn btn-g"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah Break</button>
-    </form>
-  </div>
-  <div class="card">
-    <table class="dtbl">
-      <thead><tr><th>Guru</th><th>Hari</th><th>Waktu</th><th>Keterangan</th><th>Aksi</th></tr></thead>
-      <tbody id="wbTbl"></tbody>
-    </table>
-  </div>
-</div>
 
-<!-- REKAP — terbuka untuk semua -->
-<div class="view" id="view-summary">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;" class="no-print">
-    <div style="font-size:15px;font-weight:600;color:var(--txt);">Rekap Jadwal</div>
-    <button class="btn-print" onclick="window.print()"><svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Cetak / Print</button>
-  </div>
-  <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Kelas Reguler</div>
-    <div style="overflow-x:auto;"><table class="dtbl"><thead><tr><th>Program</th><th>Guru</th><th>Zona</th><th>Siswa</th><th>Hari</th><th>Jam</th></tr></thead><tbody id="sumReg"></tbody></table></div>
-  </div>
-  <div class="card">
-    <div class="ctitle"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Kelas Private</div>
-    <div style="overflow-x:auto;"><table class="dtbl"><thead><tr><th>Program</th><th>Guru</th><th>Zona</th><th>Siswa</th><th>Hari</th><th>Jam</th></tr></thead><tbody id="sumPriv"></tbody></table></div>
-  </div>
-</div>
+    <!-- ═══ KELOLA (admin) ═══ -->
+    <div class="view" id="view-manage">
+      <!-- sub-tabs for manage -->
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;" id="manageSubTabs">
+        <button class="sb2 sel" data-msub="zones" onclick="switchManage('zones',this)">Zona</button>
+        <button class="sb2" data-msub="teachers" onclick="switchManage('teachers',this)">Guru</button>
+        <button class="sb2" data-msub="students" onclick="switchManage('students',this)">Siswa</button>
+        <button class="sb2" data-msub="wellness" onclick="switchManage('wellness',this)">Wellness</button>
+      </div>
 
-</div></div></div>
+      <!-- Zona -->
+      <div id="msub-zones">
+        <div class="card">
+          <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Tambah Zona</div>
+          <form id="zoneForm"><div class="gr3"><div class="fg"><div class="fl">Program</div><select id="zProg" class="inp"><option value="">Pilih</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select></div><div class="fg"><div class="fl">Nama Zona</div><input id="zName" class="inp" placeholder="mis. R1-A"></div><div class="fg"><div class="fl">&nbsp;</div><button type="submit" class="btn btn-g" style="width:100%;">Tambah</button></div></div></form>
+        </div>
+        <div class="card"><table class="dtbl"><thead><tr><th>Program</th><th>Zona</th><th>Siswa</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="zonesTbl"></tbody></table></div>
+      </div>
+
+      <!-- Guru -->
+      <div id="msub-teachers" style="display:none;">
+        <div class="card">
+          <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Tambah Guru</div>
+          <form id="teachForm"><div class="gr3"><div class="fg"><div class="fl">Nama Guru</div><input id="tName" class="inp" placeholder="Nama lengkap"></div><div class="fg"><div class="fl">Spesialisasi</div><input id="tSpec" class="inp" placeholder="mis. Math & Science"></div><div class="fg"><div class="fl">&nbsp;</div><button type="submit" class="btn btn-g" style="width:100%;">Tambah</button></div></div></form>
+        </div>
+        <div class="card"><table class="dtbl"><thead><tr><th>Nama</th><th>Spesialis</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="teachTbl"></tbody></table></div>
+      </div>
+
+      <!-- Siswa -->
+      <div id="msub-students" style="display:none;">
+        <div class="card">
+          <div class="ctitle"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Import dari Spreadsheet</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+            <button class="btn btn-g" onclick="importFromSheets()" id="importBtn">
+              <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+              Sync Spreadsheet
+            </button>
+            <span id="importStatus" style="font-size:12px;color:var(--ink-faint);">Belum disync</span>
+          </div>
+          <div id="importPreview">
+            <div style="font-size:11px;color:var(--ink-faint);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Preview — pilih siswa</div>
+            <div class="import-scroll"><table class="dtbl" id="importPreviewTbl"><thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"> Semua</th><th>Nama</th><th>Program</th><th>Kelas</th></tr></thead><tbody id="importPreviewBody"></tbody></table></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
+              <button class="btn btn-g" onclick="confirmImport()">Tambahkan Dipilih</button>
+              <span id="selectedCount" style="font-size:12px;color:var(--ink-faint);">0 dipilih</span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Tambah Siswa Manual</div>
+          <form id="studForm">
+            <div style="position:relative;margin-bottom:10px;">
+              <div class="fl" style="margin-bottom:5px;">NAMA SISWA</div>
+              <input id="sName" class="inp" placeholder="Ketik nama…" autocomplete="off" oninput="showSuggestions(this.value)">
+              <div id="nameSuggest"></div>
+            </div>
+            <div class="gr3" style="margin-bottom:10px;">
+              <div class="fg"><div class="fl">Program</div><select id="sProg" class="inp" onchange="updateSZones()"><option value="">Pilih</option><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select></div>
+              <div class="fg"><div class="fl">Zona</div><select id="sZone" class="inp"><option value="">Pilih Zona</option></select></div>
+              <div class="fg"><div class="fl">Kelas</div><input id="sGrade" class="inp" placeholder="mis. 3"></div>
+            </div>
+            <button type="submit" class="btn btn-g">Tambah Siswa</button>
+          </form>
+        </div>
+        <div class="card">
+          <div class="stud-total-bar" id="studTotalBar"></div>
+          <table class="dtbl"><thead><tr><th>Nama</th><th>Program</th><th>Zona</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="studTbl"></tbody></table>
+        </div>
+      </div>
+
+      <!-- Wellness -->
+      <div id="msub-wellness" style="display:none;">
+        <div class="card">
+          <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>Tambah Wellness Break</div>
+          <div class="wb-info"><strong>Wellness Break</strong><br>Blokir waktu guru agar tidak bisa dijadwalkan — misal mengajar di sekolah lain, rapat, atau istirahat.</div>
+          <form id="wbForm">
+            <div class="gr4" style="margin-bottom:10px;">
+              <div class="fg"><div class="fl">Guru</div><select id="wbTeach" class="inp"><option value="">Pilih</option></select></div>
+              <div class="fg"><div class="fl">Hari</div><select id="wbDay" class="inp"><option value="">Pilih</option><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select></div>
+              <div class="fg"><div class="fl">Dari</div><select id="wbStart" class="inp"></select></div>
+              <div class="fg"><div class="fl">Sampai</div><select id="wbEnd" class="inp"></select></div>
+            </div>
+            <div class="fg" style="margin-bottom:12px;">
+              <div class="fl">Keterangan <span class="wb-opt-label">(opsional)</span></div>
+              <input id="wbNote" class="inp" placeholder="mis. Mengajar di SDIT, Rapat, Istirahat…">
+            </div>
+            <button type="submit" class="btn btn-g">Tambah Break</button>
+          </form>
+        </div>
+        <div class="card">
+          <table class="dtbl"><thead><tr><th>Guru</th><th>Hari</th><th>Waktu</th><th>Keterangan</th><th>Aksi</th></tr></thead><tbody id="wbTbl"></tbody></table>
+        </div>
+      </div>
+    </div><!-- /view-manage -->
+
+  </div><!-- /content -->
+
+  <!-- AUTH ROW (login/logout floating) -->
+  <div style="text-align:center;padding:0 16px 16px;" id="authRow">
+    <button class="btn" id="loginBtn" onclick="showOv('loginOv')" style="width:100%;justify-content:center;">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+      Login Admin
+    </button>
+    <button class="btn btn-d" id="logoutBtn" onclick="doLogout()" style="width:100%;justify-content:center;display:none;">
+      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout Admin
+    </button>
+  </div>
+
+</div><!-- /page -->
+
+<!-- ══ OVERLAYS ══ -->
 
 <!-- LOGIN -->
-<div class="ov" id="loginOv">
+<div class="ov" id="loginOv" style="align-items:flex-end;">
   <div class="lbox">
     <div class="ltitle">Login Admin</div>
     <div class="lsub">Masukkan kredensial untuk akses panel admin</div>
@@ -406,8 +528,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
     <div class="fg"><div class="fl">Password</div><input type="password" id="lPass" class="inp" placeholder="Password"></div>
     <div class="lerr" id="lErr">Username atau password salah.</div>
     <div style="display:flex;gap:8px;margin-top:16px;">
-      <button class="btn" style="flex:1;" onclick="hideOv('loginOv')">Batal</button>
-      <button class="btn btn-p" style="flex:1;" onclick="doLogin()">Masuk</button>
+      <button class="btn" style="flex:1;justify-content:center;" onclick="hideOv('loginOv')">Batal</button>
+      <button class="btn btn-p" style="flex:1;justify-content:center;" onclick="doLogin()">Masuk</button>
     </div>
   </div>
 </div>
@@ -416,7 +538,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 <div class="ov" id="schedOv">
   <div class="mbox lg">
     <div class="mhdr"><span class="mtitle" id="schedModalTitle">Detail Jadwal</span><button class="mclose" onclick="hideOv('schedOv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
-    <div class="mbody"><div class="dgrid" id="schedDetailGrid"></div><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Daftar Siswa</div><div class="slist" id="schedStudentList"></div></div>
+    <div class="mbody"><div class="dgrid" id="schedDetailGrid"></div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-weight:700;">Daftar Siswa</div><div class="slist" id="schedStudentList"></div></div>
     <div class="mfoot" id="schedModalFooter"></div>
   </div>
 </div>
@@ -431,7 +553,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
       <div class="gr2"><div class="fg"><div class="fl">Jam Mulai</div><select id="eStart" class="inp" onchange="(function(s){var idx=TIMES.slice(0,-1).indexOf(s.value);var ne=TIMES.slice(1)[idx]||TIMES[TIMES.length-1];document.getElementById('eEnd').value=ne;})(this)"></select></div><div class="fg"><div class="fl">Jam Selesai</div><select id="eEnd" class="inp"></select></div></div>
     </div>
     <div class="mfoot" style="justify-content:space-between;">
-      <button class="btn btn-d" onclick="doDeleteSched()"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Hapus</button>
+      <button class="btn btn-d" onclick="doDeleteSched()">Hapus</button>
       <div style="display:flex;gap:8px;"><button class="btn" onclick="hideOv('editSchedOv')">Batal</button><button class="btn btn-p" onclick="doSaveEditSched()">Simpan</button></div>
     </div>
   </div>
@@ -472,7 +594,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
       <div class="fg" style="margin-bottom:10px;"><div class="fl">Guru</div><select id="ewTeach" class="inp"></select></div>
       <div class="fg" style="margin-bottom:10px;"><div class="fl">Hari</div><select id="ewDay" class="inp"><option>Senin</option><option>Selasa</option><option>Rabu</option><option>Kamis</option><option>Jumat</option><option>Sabtu</option><option>Minggu</option></select></div>
       <div class="gr2"><div class="fg"><div class="fl">Dari</div><select id="ewStart" class="inp"></select></div><div class="fg"><div class="fl">Sampai</div><select id="ewEnd" class="inp"></select></div></div>
-      <div class="fg" style="margin-top:10px;"><div class="fl">Keterangan <span class="wb-opt-label">(opsional)</span></div><input id="ewNote" class="inp" placeholder="mis. Mengajar di sekolah, Rapat…"></div>
+      <div class="fg" style="margin-top:10px;"><div class="fl">Keterangan <span class="wb-opt-label">(opsional)</span></div><input id="ewNote" class="inp" placeholder="mis. Mengajar di sekolah…"></div>
     </div>
     <div class="mfoot"><button class="btn" onclick="hideOv('editWbOv')">Batal</button><button class="btn btn-p" onclick="doSaveWb()">Simpan</button></div>
   </div>
@@ -487,19 +609,41 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 </div>
 
 <script>
+/* ══ CONFIG ══ */
 const SCRIPT_URL='https://script.google.com/macros/s/AKfycbzW73XhHZCke1-qsAmKtxuZrHNFSihIoqzQGXo0BC-v_PgR_SBuRI7w73NLwF9fCNLf/exec';
 const ADMIN_USER='superadmin',ADMIN_PASS='mb1445';
 const DAYS=['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu','Minggu'];
 const TIMES=[];for(let h=9;h<=20;h++)TIMES.push(String(h).padStart(2,'0')+':00');
 const SLOTS=TIMES.slice(0,-1);
-function nh(t){const[h]=t.split(':').map(Number);return String(h+1).padStart(2,'0')+':00';}
-function tm(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
-function ro(s1,e1,s2,e2){return!(tm(e1)<=tm(s2)||tm(s1)>=tm(e2));}
-
 const DEF_T=[{id:1,name:'Elis Rosmiati',specialty:'Math & Science',active:true},{id:2,name:'Yessi Marlina',specialty:'Language & Arts',active:true}];
 const S={teachers:[],zones:[],students:[],schedules:[],holidays:[],form:{prog:'',type:'',zone:'',teacher:'',dayTimes:{}}};
 let isAdmin=false,eZoneId=null,eTeachId=null,eStudId=null,eWbId=null,eGroup=null;
+let curManageSub='zones';
 
+function nh(t){const[h]=t.split(':').map(Number);return String(h+1).padStart(2,'0')+':00';}
+function tm(t){const[h,m]=t.split(':').map(Number);return h*60+m;}
+function ro(s1,e1,s2,e2){return!(tm(e1)<=tm(s2)||tm(s1)>=tm(e2));}
+function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])).push(x);});return m;}
+
+/* ══ DARK MODE ══ */
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme',dark?'dark':'light');
+  localStorage.setItem('mb_dark',dark?'1':'0');
+  const icon=document.getElementById('dmIcon');
+  if(dark){icon.innerHTML='<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';}
+  else{icon.innerHTML='<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';}
+}
+function toggleDark(){const isDark=document.documentElement.getAttribute('data-theme')==='dark';applyTheme(!isDark);}
+if(localStorage.getItem('mb_dark')==='1')applyTheme(true);
+
+/* ══ DATE GREETING ══ */
+function setGreetDate(){
+  const d=new Date();const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const months=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  document.getElementById('greetDate').textContent=`${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+/* ══ API ══ */
 function callApi(params){
   return new Promise((res,rej)=>{
     const cb='cb_'+Date.now();
@@ -535,16 +679,19 @@ async function saveAll(){
   try{await callApi({action:'save',data:JSON.stringify(d)});}catch{}
 }
 
+/* ══ INIT ══ */
 document.addEventListener('DOMContentLoaded',async()=>{
+  setGreetDate();
   await loadData();
   document.getElementById('LS').style.display='none';
+  setTimeout(()=>document.getElementById('splash').classList.add('hidden'),2200);
   ['wbStart','wbEnd','ewStart','ewEnd'].forEach(id=>{
     const el=document.getElementById(id);if(!el)return;
-    el.innerHTML=TIMES.map(t=>'<option>'+t+'</option>').join('');
+    el.innerHTML=TIMES.map(t=>`<option>${t}</option>`).join('');
   });
   ['eStart','eEnd'].forEach((id,i)=>{
     const el=document.getElementById(id);if(!el)return;
-    el.innerHTML=(i===0?TIMES.slice(0,-1):TIMES.slice(1)).map(t=>'<option>'+t+'</option>').join('');
+    el.innerHTML=(i===0?TIMES.slice(0,-1):TIMES.slice(1)).map(t=>`<option>${t}</option>`).join('');
   });
   if(localStorage.getItem('mb_adm')==='1'){isAdmin=true;showAdminUI();}
   bindForms();rAll();rSched();
@@ -552,18 +699,29 @@ document.addEventListener('DOMContentLoaded',async()=>{
 
 async function doRefresh(){await loadData();rAll();rSched();toast('Data diperbarui');}
 
+/* ══ NAV ══ */
 function sw(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const el=document.getElementById('view-'+name);if(el)el.classList.add('on');
   if(name==='summary')rSummary();
-  if(name==='wellness')rWb();
-  if(name==='zones')rZones();
-  if(name==='teachers')rTeach();
-  if(name==='students')rStud();
+  if(name==='manage'){rZones();rTeach();rStud();rWb();}
 }
-function snbOn(el){document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
-function tnbOn(el){document.querySelectorAll('.ttab').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
+function tnbOn(el){document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}
 
+function switchManage(sub,btn){
+  curManageSub=sub;
+  document.querySelectorAll('#manageSubTabs .sb2').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  ['zones','teachers','students','wellness'].forEach(s=>{
+    const el=document.getElementById('msub-'+s);if(el)el.style.display=s===sub?'block':'none';
+  });
+  if(sub==='zones')rZones();
+  if(sub==='teachers')rTeach();
+  if(sub==='students')rStud();
+  if(sub==='wellness')rWb();
+}
+
+/* ══ AUTH ══ */
 function doLogin(){
   const u=document.getElementById('lUser').value.trim(),p=document.getElementById('lPass').value;
   const err=document.getElementById('lErr');
@@ -577,28 +735,25 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementB
 
 function doLogout(){
   isAdmin=false;localStorage.removeItem('mb_adm');
-  document.querySelectorAll('.admin-nb').forEach(el=>el.classList.remove('vis'));
-  document.querySelectorAll('.ttab.adm').forEach(el=>el.classList.remove('vis'));
+  document.querySelectorAll('.tab-btn.adm').forEach(el=>el.classList.remove('vis'));
   document.getElementById('adminBadge').style.display='none';
-  document.getElementById('loginBtn').style.display='flex';
-  // PERBAIKAN 3: remove class show
-  document.getElementById('logoutBtn').classList.remove('show');
-  sw('schedule');snbOn(document.getElementById('snb-schedule'));tnbOn(document.getElementById('tnb-schedule'));
+  document.getElementById('loginBtn').style.display='';
+  document.getElementById('logoutBtn').style.display='none';
+  sw('schedule');tnbOn(document.getElementById('tnb-schedule'));
   toast('Logout berhasil');
 }
-
 function showAdminUI(){
-  document.querySelectorAll('.admin-nb').forEach(el=>el.classList.add('vis'));
-  document.querySelectorAll('.ttab.adm').forEach(el=>el.classList.add('vis'));
+  document.querySelectorAll('.tab-btn.adm').forEach(el=>el.classList.add('vis'));
   document.getElementById('adminBadge').style.display='inline-flex';
   document.getElementById('loginBtn').style.display='none';
-  // PERBAIKAN 3: gunakan class .show agar !important override display:none di semua ukuran layar
-  document.getElementById('logoutBtn').classList.add('show');
+  document.getElementById('logoutBtn').style.display='flex';
 }
 
+/* ══ OVERLAY ══ */
 function showOv(id){document.getElementById(id)?.classList.add('show');}
 function hideOv(id){document.getElementById(id)?.classList.remove('show');}
 
+/* ══ SCHEDULE RENDER ══ */
 function getFiltered(){
   const ft=document.getElementById('fTeacher').value,fp=document.getElementById('fProgram').value,fy=document.getElementById('fType').value;
   return S.schedules.filter(s=>{
@@ -606,7 +761,6 @@ function getFiltered(){
     return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false)&&(!ft||s.teacher===ft)&&(!fp||s.program===fp)&&(!fy||s.type===fy);
   });
 }
-function grpBy(arr,fn){const m={};arr.forEach(x=>{const k=fn(x);(m[k]||(m[k]=[])).push(x);});return m;}
 
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value;
@@ -620,7 +774,7 @@ function rSched(){
         const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
         const isStart=g.start===slot;
         const blkCls=isStart?`blk ${cls}`:`blk-cont ${cls}`;
-        const contLabel=isStart?'':`<div style="font-size:9px;opacity:.55;margin-bottom:1px;">↳ lanjutan ${g.start}–${g.end}</div>`;
+        const contLabel=isStart?'':`<div style="font-size:9px;opacity:.55;margin-bottom:1px;">↳ ${g.start}–${g.end}</div>`;
         return`<div class="${blkCls}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')">${contLabel}<div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc">${cnt} siswa</div>${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}</div>`;
       }).join('');
       let wb='';
@@ -635,7 +789,7 @@ function rSched(){
 function openSchedDetail(program,zone,teacher,type,day,start,end){
   const grouped=S.schedules.filter(s=>s.program===program&&s.zone===zone&&s.teacher===teacher&&s.type===type&&s.day===day&&s.start===start&&s.end===end).filter(s=>{const st=S.students.find(x=>x.id===s.studentId);return st&&st.active!==false;});
   const uniqStudents=[...new Map(grouped.map(s=>[s.studentId,s])).values()];
-  document.getElementById('schedModalTitle').textContent=`${zone} • ${day} ${start}–${end}`;
+  document.getElementById('schedModalTitle').textContent=`${zone} · ${day} ${start}–${end}`;
   document.getElementById('schedDetailGrid').innerHTML=
     `<div class="di"><label>Program</label><span>${program}</span></div>`+
     `<div class="di"><label>Jenis</label><span>${type==='regular'?'Reguler':'Private'}</span></div>`+
@@ -644,10 +798,10 @@ function openSchedDetail(program,zone,teacher,type,day,start,end){
     `<div class="di"><label>Jumlah Siswa</label><span>${uniqStudents.length}</span></div>`;
   document.getElementById('schedStudentList').innerHTML=uniqStudents.map(s=>{
     const st=S.students.find(x=>x.id===s.studentId);
-    return`<div class="schip" onclick="openStudDetail(${s.studentId})"><div><div class="schip-name">${s.studentName}</div><div class="schip-meta">${st?`Kelas ${st.grade} • ${st.zone}`:''}</div></div><div class="schip-arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div></div>`;
-  }).join('')||'<div style="color:var(--txt3);font-size:12px;">Tidak ada siswa</div>';
+    return`<div class="schip" onclick="openStudDetail(${s.studentId})"><div><div class="schip-name">${s.studentName}</div><div class="schip-meta">${st?`Kelas ${st.grade} · ${st.zone}`:''}</div></div><div class="schip-arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div></div>`;
+  }).join('')||'<div style="color:var(--ink-faint);font-size:12px;">Tidak ada siswa</div>';
   document.getElementById('schedModalFooter').innerHTML=isAdmin
-    ?`<div style="display:flex;gap:8px;width:100%;justify-content:space-between;"><button class="btn btn-d" onclick="quickDeleteSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')">Hapus Jadwal</button><button class="btn btn-p" onclick="openEditSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')">Edit Jadwal</button></div>`:'';
+    ?`<div style="display:flex;gap:8px;width:100%;justify-content:space-between;"><button class="btn btn-d btn-sm" onclick="quickDeleteSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')">Hapus</button><button class="btn btn-p btn-sm" onclick="openEditSched('${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')">Edit</button></div>`:'';
   showOv('schedOv');
 }
 
@@ -657,9 +811,9 @@ function openStudDetail(id){
   const grouped=grpBy(schedList,sc=>`${sc.program}|${sc.zone}|${sc.teacher}|${sc.type}|${sc.start}|${sc.end}`);
   const schedRows=Object.values(grouped).map(arr=>{
     const g=arr[0],days=[...new Set(arr.map(x=>x.day))].sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b));
-    return`<div style="background:var(--surf2);border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;margin-bottom:5px;font-size:12px;"><div style="font-weight:600;color:var(--txt);margin-bottom:2px;">${g.zone} • ${g.type==='regular'?'Reguler':'Private'}</div><div style="color:var(--txt2);">${days.join(', ')} • ${g.start}–${g.end}</div><div style="color:var(--txt3);font-size:11px;">${g.teacher}</div></div>`;
-  }).join('')||'<div style="color:var(--txt3);font-size:12px;">Belum ada jadwal</div>';
-  document.getElementById('studDetailBody').innerHTML=`<div class="dgrid" style="margin-bottom:14px;"><div class="di"><label>Nama</label><span>${s.name}</span></div><div class="di"><label>Program</label><span>${s.program}</span></div><div class="di"><label>Zona</label><span>${s.zone}</span></div><div class="di"><label>Kelas</label><span>${s.grade||'-'}</span></div><div class="di"><label>Status</label><span>${s.active!==false?'Aktif':'Nonaktif'}</span></div></div><div style="font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Jadwal Aktif</div>${schedRows}`;
+    return`<div style="background:var(--surface2);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:6px;font-size:12px;"><div style="font-weight:700;color:var(--ink);margin-bottom:2px;">${g.zone} · ${g.type==='regular'?'Reguler':'Private'}</div><div style="color:var(--ink-mid);">${days.join(', ')} · ${g.start}–${g.end}</div><div style="color:var(--ink-faint);font-size:11px;">${g.teacher}</div></div>`;
+  }).join('')||'<div style="color:var(--ink-faint);font-size:12px;">Belum ada jadwal</div>';
+  document.getElementById('studDetailBody').innerHTML=`<div class="dgrid" style="margin-bottom:14px;"><div class="di"><label>Nama</label><span>${s.name}</span></div><div class="di"><label>Program</label><span>${s.program}</span></div><div class="di"><label>Zona</label><span>${s.zone}</span></div><div class="di"><label>Kelas</label><span>${s.grade||'-'}</span></div><div class="di"><label>Status</label><span>${s.active!==false?'Aktif':'Nonaktif'}</span></div></div><div style="font-size:10px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-weight:700;">Jadwal Aktif</div>${schedRows}`;
   showOv('studDetailOv');
 }
 
@@ -683,11 +837,12 @@ async function doDeleteSched(){
 }
 function sameGrp(s,k){return s.program===k.program&&s.zone===k.zone&&s.teacher===k.teacher&&s.type===k.type&&s.day===k.day&&s.start===k.start&&s.end===k.end;}
 
+/* ══ ADD FORM ══ */
 function rebuildAddButtons(){
   const zw=document.getElementById('zoneWrap'),tw=document.getElementById('teachWrap');if(!zw||!tw)return;
   const zones=S.zones.filter(z=>(S.form.prog?z.program===S.form.prog:true)&&z.active!==false);
-  zw.innerHTML=zones.map(z=>`<button class="sb2 bzone" data-v="${z.name}">${z.name}</button>`).join('')||'<span style="color:var(--txt3);font-size:12px;">Belum ada zona</span>';
-  tw.innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<button class="sb2 bteach" data-v="${t.name}">${t.name}</button>`).join('')||'<span style="color:var(--txt3);font-size:12px;">Belum ada guru</span>';
+  zw.innerHTML=zones.map(z=>`<button class="sb2 bzone" data-v="${z.name}">${z.name}</button>`).join('')||'<span style="color:var(--ink-faint);font-size:12px;">Belum ada zona</span>';
+  tw.innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<button class="sb2 bteach" data-v="${t.name}">${t.name}</button>`).join('')||'<span style="color:var(--ink-faint);font-size:12px;">Belum ada guru</span>';
   document.querySelectorAll('.bprog').forEach(b=>b.onclick=()=>{S.form.prog=b.dataset.v;document.querySelectorAll('.bprog').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');rebuildAddButtons();updatePrev();});
   document.querySelectorAll('.btype').forEach(b=>b.onclick=()=>{S.form.type=b.dataset.v;document.querySelectorAll('.btype').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');});
   zw.querySelectorAll('.bzone').forEach(b=>b.onclick=()=>{S.form.zone=b.dataset.v;zw.querySelectorAll('.bzone').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');updatePrev();});
@@ -732,65 +887,34 @@ function resetForm(){
   document.getElementById('dayTimeList').innerHTML='';updatePrev();rebuildAddButtons();
 }
 
+/* ══ RENDER TABLES ══ */
 function rAll(){rTeach();rZones();rStud();rWb();rebuildAddButtons();updateSZones();refreshFTeacher();}
 function refreshFTeacher(){
   document.getElementById('fTeacher').innerHTML='<option value="">Semua Guru</option>'+S.teachers.filter(t=>t.active!==false).map(t=>`<option>${t.name}</option>`).join('');
 }
 function rTeach(){
   const tb=document.getElementById('teachTbl');if(!tb)return;
-  tb.innerHTML=S.teachers.map(t=>`<tr><td>${t.name}</td><td>${t.specialty}</td><td><span class="chip ${t.active!==false?'cg':'cGray'}">${t.active!==false?'Aktif':'Nonaktif'}</span></td><td><button class="btn btn-sm btn-p" style="margin-right:4px;" onclick="openEditTeach(${t.id})">Edit</button><button class="btn btn-sm" onclick="toggleTeach(${t.id})">${t.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`).join('')||`<tr><td colspan="4" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada guru</td></tr>`;
+  tb.innerHTML=S.teachers.map(t=>`<tr><td>${t.name}</td><td>${t.specialty}</td><td><span class="chip ${t.active!==false?'cg':'cGray'}">${t.active!==false?'Aktif':'Nonaktif'}</span></td><td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm btn-p" onclick="openEditTeach(${t.id})">Edit</button><button class="btn btn-sm" onclick="toggleTeach(${t.id})">${t.active!==false?'Off':'On'}</button></td></tr>`).join('')||`<tr><td colspan="4" style="text-align:center;color:var(--ink-faint);padding:16px;">Belum ada guru</td></tr>`;
 }
 function rZones(){
   const tb=document.getElementById('zonesTbl');if(!tb)return;
-  tb.innerHTML=S.zones.map(z=>{const c=S.students.filter(s=>s.program===z.program&&s.zone===z.name&&s.active!==false).length;return`<tr><td>${z.program}</td><td>${z.name}</td><td>${c}</td><td><span class="chip ${z.active!==false?'cg':'cGray'}">${z.active!==false?'Aktif':'Nonaktif'}</span></td><td><button class="btn btn-sm btn-p" style="margin-right:4px;" onclick="openEditZone(${z.id})">Edit</button><button class="btn btn-sm" onclick="toggleZone(${z.id})">${z.active!==false?'Nonaktifkan':'Aktifkan'}</button></td></tr>`;}).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada zona</td></tr>`;
+  tb.innerHTML=S.zones.map(z=>{const c=S.students.filter(s=>s.program===z.program&&s.zone===z.name&&s.active!==false).length;return`<tr><td>${z.program}</td><td>${z.name}</td><td>${c}</td><td><span class="chip ${z.active!==false?'cg':'cGray'}">${z.active!==false?'Aktif':'Nonaktif'}</span></td><td style="display:flex;gap:4px;flex-wrap:wrap;"><button class="btn btn-sm btn-p" onclick="openEditZone(${z.id})">Edit</button><button class="btn btn-sm" onclick="toggleZone(${z.id})">${z.active!==false?'Off':'On'}</button></td></tr>`;}).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);padding:16px;">Belum ada zona</td></tr>`;
 }
-
-// PERBAIKAN 1: Tabel siswa dengan jumlah total di atas
 function rStud(){
   const tb=document.getElementById('studTbl');if(!tb)return;
   const totalAktif=S.students.filter(s=>s.active!==false).length;
   const totalPre=S.students.filter(s=>s.program==='preschool'&&s.active!==false).length;
   const totalEle=S.students.filter(s=>s.program==='elementary'&&s.active!==false).length;
   const bar=document.getElementById('studTotalBar');
-  if(bar)bar.innerHTML=`
-    <div class="stud-total-badge">
-      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      ${totalAktif} siswa aktif &nbsp;/&nbsp; ${S.students.length} total
-    </div>
-    ${totalPre?`<span class="stud-prog-badge stud-prog-pre">Preschool: ${totalPre}</span>`:''}
-    ${totalEle?`<span class="stud-prog-badge stud-prog-ele">Elementary: ${totalEle}</span>`:''}
-  `;
-  tb.innerHTML=S.students.map(s=>`<tr>
-    <td>${s.name}${s.fromSheets?'<span class="chip cg" style="margin-left:5px;font-size:10px;padding:1px 5px;">Sheets</span>':''}</td>
-    <td>${s.program||'—'}</td>
-    <td>${s.zone||'<span style="color:var(--red);font-size:11px;">Belum diset</span>'}</td>
-    <td>${s.grade||'-'}</td>
-    <td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Nonaktif'}</span></td>
-    <td style="display:flex;gap:4px;flex-wrap:wrap;">
-      <button class="btn btn-sm btn-p" onclick="openEditStud(${s.id})">Edit</button>
-      <button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Nonaktifkan':'Aktifkan'}</button>
-      <button class="btn btn-sm btn-d" onclick="deleteStud(${s.id})">Hapus</button>
-    </td>
-  </tr>`).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada siswa</td></tr>`;
+  if(bar)bar.innerHTML=`<div class="stud-total-badge"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>${totalAktif} aktif / ${S.students.length} total</div>${totalPre?`<span class="stud-prog-badge stud-prog-pre">Preschool: ${totalPre}</span>`:''}${totalEle?`<span class="stud-prog-badge stud-prog-ele">Elementary: ${totalEle}</span>`:''}`;
+  tb.innerHTML=S.students.map(s=>`<tr><td>${s.name}${s.fromSheets?'<span class="chip cg" style="margin-left:5px;font-size:9px;padding:1px 6px;">Sheets</span>':''}</td><td>${s.program||'—'}</td><td>${s.zone||'<span style="color:var(--red);font-size:11px;">—</span>'}</td><td>${s.grade||'-'}</td><td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Off'}</span></td><td style="display:flex;gap:3px;flex-wrap:wrap;"><button class="btn btn-sm btn-p" onclick="openEditStud(${s.id})">Edit</button><button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Off':'On'}</button><button class="btn btn-sm btn-d" onclick="deleteStud(${s.id})">Hapus</button></td></tr>`).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--ink-faint);padding:16px;">Belum ada siswa</td></tr>`;
 }
-
-// PERBAIKAN: Wellness tabel dengan kolom keterangan
 function rWb(){
   const tb=document.getElementById('wbTbl');if(!tb)return;
   const wbT=document.getElementById('wbTeach');
   if(wbT)wbT.innerHTML='<option value="">Pilih</option>'+S.teachers.filter(t=>t.active!==false).map(t=>`<option>${t.name}</option>`).join('');
-  tb.innerHTML=S.holidays.map(h=>`<tr>
-    <td>${h.teacher}</td>
-    <td>${h.day}</td>
-    <td style="white-space:nowrap;font-family:var(--mono);font-size:11px;">${h.start} – ${h.end}</td>
-    <td style="color:var(--txt3);font-size:12px;">${h.note||'<span style="opacity:.35;">—</span>'}</td>
-    <td style="display:flex;gap:4px;">
-      <button class="btn btn-sm btn-p" onclick="openEditWb(${h.id})">Edit</button>
-      <button class="btn btn-sm btn-d" onclick="deleteWb(${h.id})">Hapus</button>
-    </td>
-  </tr>`).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--txt3);padding:16px;">Belum ada data</td></tr>`;
+  tb.innerHTML=S.holidays.map(h=>`<tr><td>${h.teacher}</td><td>${h.day}</td><td style="white-space:nowrap;font-family:var(--mono);font-size:11px;">${h.start}–${h.end}</td><td style="color:var(--ink-faint);font-size:12px;">${h.note||'<span style="opacity:.3;">—</span>'}</td><td style="display:flex;gap:4px;"><button class="btn btn-sm btn-p" onclick="openEditWb(${h.id})">Edit</button><button class="btn btn-sm btn-d" onclick="deleteWb(${h.id})">Hapus</button></td></tr>`).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);padding:16px;">Belum ada data</td></tr>`;
 }
-
 function rSummary(){
   const mk=type=>{
     const list=S.schedules.filter(s=>s.type===type).filter(s=>{const st=S.students.find(x=>x.id===s.studentId),t=S.teachers.find(x=>x.name===s.teacher),z=S.zones.find(x=>x.name===s.zone&&x.program===s.program);return st&&st.active!==false&&(!t||t.active!==false)&&(!z||z.active!==false);});
@@ -798,8 +922,8 @@ function rSummary(){
     return Object.values(groups).map(arr=>{
       const g=arr[0],cnt=new Set(arr.map(x=>x.studentId)).size;
       const dayInfo=[...new Set(arr.map(x=>x.day))].sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b)).join(', ');
-      return`<tr><td>${g.program}</td><td>${g.teacher}</td><td>${g.zone}</td><td style="text-align:center">${cnt}</td><td>${dayInfo}</td><td>${g.start}–${g.end}</td></tr>`;
-    }).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--txt3);padding:12px;">Belum ada data</td></tr>`;
+      return`<tr class="${g.program==='preschool'?'sum-row-pre':'sum-row-ele'}"><td>${g.program}</td><td>${g.teacher}</td><td>${g.zone}</td><td style="text-align:center">${cnt}</td><td>${dayInfo}</td><td>${g.start}–${g.end}</td></tr>`;
+    }).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--ink-faint);padding:12px;">Belum ada data</td></tr>`;
   };
   document.getElementById('sumReg').innerHTML=mk('regular');
   document.getElementById('sumPriv').innerHTML=mk('private');
@@ -813,21 +937,22 @@ function populateEditZones(prog){
   sel.innerHTML=S.zones.filter(z=>z.program===prog&&z.active!==false).map(z=>`<option>${z.name}</option>`).join('');
 }
 
+/* ══ BIND FORMS ══ */
 function bindForms(){
   document.getElementById('zoneForm').addEventListener('submit',async e=>{e.preventDefault();const prog=document.getElementById('zProg').value,name=(document.getElementById('zName').value||'').trim();if(!prog||!name)return toast('Lengkapi data zona','e');if(S.zones.some(z=>z.program===prog&&z.name.toLowerCase()===name.toLowerCase()))return toast('Zona sudah ada','e');S.zones.push({id:Date.now(),program:prog,name,active:true});await saveAll();rZones();rebuildAddButtons();toast('Zona ditambahkan!');e.target.reset();});
   document.getElementById('teachForm').addEventListener('submit',async e=>{e.preventDefault();const name=(document.getElementById('tName').value||'').trim(),spec=(document.getElementById('tSpec').value||'').trim();if(!name||!spec)return toast('Lengkapi data guru','e');S.teachers.push({id:Date.now(),name,specialty:spec,active:true});await saveAll();rTeach();rebuildAddButtons();refreshFTeacher();toast('Guru ditambahkan!');e.target.reset();});
   document.getElementById('studForm').addEventListener('submit',async e=>{e.preventDefault();const name=(document.getElementById('sName').value||'').trim(),prog=document.getElementById('sProg').value,zone=document.getElementById('sZone').value,grade=(document.getElementById('sGrade').value||'').trim();if(!name||!prog||!zone||!grade)return toast('Lengkapi data siswa','e');const zObj=S.zones.find(z=>z.name===zone&&z.program===prog);if(!zObj||zObj.active===false)return toast('Zona nonaktif','e');S.students.push({id:Date.now(),name,program:prog,zone,grade,active:true});await saveAll();rStud();rZones();rebuildAddButtons();toast('Siswa ditambahkan!');e.target.reset();});
-  // Wellness dengan keterangan
   document.getElementById('wbForm').addEventListener('submit',async e=>{
     e.preventDefault();
     const teacher=document.getElementById('wbTeach').value,day=document.getElementById('wbDay').value,start=document.getElementById('wbStart').value,end=document.getElementById('wbEnd').value,note=(document.getElementById('wbNote').value||'').trim();
     if(!teacher||!day||!start||!end)return toast('Lengkapi data break','e');
     if(tm(start)>=tm(end))return toast('Jam tidak valid','e');
     S.holidays.push({id:Date.now(),teacher,day,start,end,note});
-    await saveAll();rWb();rSched();toast('Wellness break ditambahkan!');e.target.reset();
+    await saveAll();rWb();rSched();toast('Break ditambahkan!');e.target.reset();
   });
 }
 
+/* ══ ZONE / TEACHER / STUDENT CRUD ══ */
 window.openEditZone=id=>{const z=S.zones.find(x=>x.id===id);if(!z)return;eZoneId=id;document.getElementById('ezProg').value=z.program;document.getElementById('ezName').value=z.name;showOv('editZoneOv');};
 window.doSaveZone=async()=>{if(!eZoneId)return hideOv('editZoneOv');const prog=document.getElementById('ezProg').value,name=(document.getElementById('ezName').value||'').trim();const idx=S.zones.findIndex(x=>x.id===eZoneId);if(idx>-1){const old=S.zones[idx].name;S.zones[idx].program=prog;S.zones[idx].name=name;S.students.forEach(s=>{if(s.zone===old)s.zone=name;});S.schedules.forEach(sc=>{if(sc.zone===old)sc.zone=name;});await saveAll();rZones();rStud();rSched();toast('Zona diperbarui!');}hideOv('editZoneOv');eZoneId=null;};
 window.toggleZone=async id=>{const i=S.zones.findIndex(x=>x.id===id);if(i<0)return;S.zones[i].active=!S.zones[i].active;await saveAll();rZones();rSched();rebuildAddButtons();toast(`Zona ${S.zones[i].active?'diaktifkan':'dinonaktifkan'}`);};
@@ -838,28 +963,17 @@ window.openEditStud=id=>{const s=S.students.find(x=>x.id===id);if(!s)return;eStu
 window.doSaveStud=async()=>{if(!eStudId)return hideOv('editStudOv');const name=(document.getElementById('esName').value||'').trim(),prog=document.getElementById('esProg').value,zone=document.getElementById('esZone').value,grade=(document.getElementById('esGrade').value||'').trim();const idx=S.students.findIndex(x=>x.id===eStudId);if(idx>-1){S.students[idx]={...S.students[idx],name,program:prog,zone,grade};await saveAll();rStud();rZones();rSched();toast('Siswa diperbarui!');}hideOv('editStudOv');eStudId=null;};
 window.toggleStud=async id=>{const i=S.students.findIndex(x=>x.id===id);if(i<0)return;S.students[i].active=!S.students[i].active;await saveAll();rStud();rSched();toast(`Siswa ${S.students[i].active?'diaktifkan':'dinonaktifkan'}`);};
 window.deleteStud=async id=>{const s=S.students.find(x=>x.id===id);if(!s)return;if(!confirm(`Hapus siswa "${s.name}"?\nSemua jadwal siswa ini juga akan dihapus.`))return;S.schedules=S.schedules.filter(sc=>sc.studentId!==id);S.students=S.students.filter(x=>x.id!==id);await saveAll();rStud();rZones();rSched();toast('Siswa dihapus!');};
-window.openEditWb=id=>{
-  const h=S.holidays.find(x=>x.id===id);if(!h)return;eWbId=id;
-  document.getElementById('ewTeach').innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');
-  document.getElementById('ewDay').value=h.day;document.getElementById('ewStart').value=h.start;document.getElementById('ewEnd').value=h.end;
-  document.getElementById('ewNote').value=h.note||'';
-  showOv('editWbOv');
-};
-window.doSaveWb=async()=>{
-  if(!eWbId)return hideOv('editWbOv');
-  const teacher=document.getElementById('ewTeach').value,day=document.getElementById('ewDay').value,start=document.getElementById('ewStart').value,end=document.getElementById('ewEnd').value,note=(document.getElementById('ewNote').value||'').trim();
-  const idx=S.holidays.findIndex(x=>x.id===eWbId);
-  if(idx>-1){S.holidays[idx]={...S.holidays[idx],teacher,day,start,end,note};await saveAll();rWb();rSched();toast('Break diperbarui!');}
-  hideOv('editWbOv');eWbId=null;
-};
+window.openEditWb=id=>{const h=S.holidays.find(x=>x.id===id);if(!h)return;eWbId=id;document.getElementById('ewTeach').innerHTML=S.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===h.teacher?'selected':''}>${t.name}</option>`).join('');document.getElementById('ewDay').value=h.day;document.getElementById('ewStart').value=h.start;document.getElementById('ewEnd').value=h.end;document.getElementById('ewNote').value=h.note||'';showOv('editWbOv');};
+window.doSaveWb=async()=>{if(!eWbId)return hideOv('editWbOv');const teacher=document.getElementById('ewTeach').value,day=document.getElementById('ewDay').value,start=document.getElementById('ewStart').value,end=document.getElementById('ewEnd').value,note=(document.getElementById('ewNote').value||'').trim();const idx=S.holidays.findIndex(x=>x.id===eWbId);if(idx>-1){S.holidays[idx]={...S.holidays[idx],teacher,day,start,end,note};await saveAll();rWb();rSched();toast('Break diperbarui!');}hideOv('editWbOv');eWbId=null;};
 window.deleteWb=async id=>{if(!confirm('Hapus wellness break ini?'))return;S.holidays=S.holidays.filter(x=>x.id!==id);await saveAll();rWb();rSched();toast('Break dihapus!');};
 
 async function quickDeleteSched(program,zone,teacher,type,day,start,end){
-  if(!confirm(`Hapus jadwal:\n${zone} • ${teacher}\n${day} ${start}–${end}?`))return;
+  if(!confirm(`Hapus jadwal:\n${zone} · ${teacher}\n${day} ${start}–${end}?`))return;
   S.schedules=S.schedules.filter(s=>!(s.program===program&&s.zone===zone&&s.teacher===teacher&&s.type===type&&s.day===day&&s.start===start&&s.end===end));
   await saveAll();rSched();rSummary();hideOv('schedOv');toast('Jadwal dihapus!');
 }
 
+/* ══ SHEETS IMPORT ══ */
 const SHEET_ID='1Jt2fv8NLgBxuzdXvw0ptSreCfGBlSuXvODcg5ia9CfA';
 const SHEET_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=Form+responses+1`;
 let sheetData=[];
@@ -867,13 +981,13 @@ function parseProgram(raw){if(!raw)return'';const r=raw.toLowerCase();if(r.inclu
 function parseGrade(raw){if(!raw)return'';const r=String(raw).toLowerCase();if(r.includes('belum')||r.includes('tk'))return'Belum Sekolah';const m=r.match(/kelas\s*(\d+)/i)||r.match(/(\d+)/);if(m)return m[1];return String(raw).trim();}
 async function importFromSheets(){
   const btn=document.getElementById('importBtn'),status=document.getElementById('importStatus');
-  btn.disabled=true;status.textContent='Mengambil data…';status.style.color='var(--acc)';
+  btn.disabled=true;status.textContent='Mengambil data…';status.style.color='var(--blue)';
   try{
     const res=await fetch(SHEET_URL),text=await res.text();
     const json=JSON.parse(text.replace(/^\/\*O_o\*\/\s*google\.visualization\.Query\.setResponse\(/,'').replace(/\);?\s*$/,''));
     sheetData=json.table.rows.map(r=>({name:(r.c[2]?.v||'').toString().trim(),program:parseProgram(r.c[23]?.v||''),grade:parseGrade(r.c[9]?.v||'')})).filter(r=>r.name&&r.name!=='-'&&r.name.length>1);
     renderImportPreview();document.getElementById('importPreview').style.display='block';
-    status.textContent=`${sheetData.length} siswa ditemukan`;status.style.color='var(--grn)';
+    status.textContent=`${sheetData.length} siswa ditemukan`;status.style.color='var(--green)';
   }catch(e){status.textContent='Gagal. Pastikan spreadsheet sudah publik.';status.style.color='var(--red)';}
   btn.disabled=false;
 }
@@ -889,7 +1003,7 @@ async function confirmImport(){
   const selected=[...document.querySelectorAll('.imp-chk:checked')].map(cb=>sheetData[parseInt(cb.dataset.idx)]);
   if(!selected.length)return toast('Pilih minimal 1 siswa','e');
   selected.forEach(s=>{if(!S.students.some(x=>x.name.toLowerCase()===s.name.toLowerCase()))S.students.push({id:Date.now()+Math.random(),name:s.name,program:s.program||'',zone:'',grade:s.grade||'',active:true,fromSheets:true});});
-  await saveAll();rStud();rZones();rebuildAddButtons();renderImportPreview();toast(`${selected.length} siswa ditambahkan! Set zona via tombol Edit.`);
+  await saveAll();rStud();rZones();rebuildAddButtons();renderImportPreview();toast(`${selected.length} siswa ditambahkan!`);
 }
 function showSuggestions(val){
   const box=document.getElementById('nameSuggest');
@@ -897,7 +1011,7 @@ function showSuggestions(val){
   const matches=sheetData.filter(s=>s.name.toLowerCase().includes(val.toLowerCase())&&!S.students.some(x=>x.name.toLowerCase()===s.name.toLowerCase())).slice(0,8);
   if(!matches.length){box.style.display='none';return;}
   box.style.display='block';
-  box.innerHTML=matches.map(s=>`<div onclick="fillFromSheet('${s.name.replace(/'/g,"\\'")}','${s.program}','${s.grade}')" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--bdr);transition:background .1s;" onmouseover="this.style.background='var(--surf3)'" onmouseout="this.style.background=''"><div style="font-weight:500">${s.name}</div><div style="font-size:11px;color:var(--txt3)">${s.program||'—'} • Kelas ${s.grade||'—'}</div></div>`).join('');
+  box.innerHTML=matches.map(s=>`<div onclick="fillFromSheet('${s.name.replace(/'/g,"\\'")}','${s.program}','${s.grade}')" style="padding:9px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line);" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''"><div style="font-weight:600">${s.name}</div><div style="font-size:11px;color:var(--ink-faint)">${s.program||'—'} · Kelas ${s.grade||'—'}</div></div>`).join('');
 }
 function fillFromSheet(name,program,grade){
   document.getElementById('sName').value=name;document.getElementById('nameSuggest').style.display='none';
@@ -906,8 +1020,9 @@ function fillFromSheet(name,program,grade){
 }
 document.addEventListener('click',e=>{if(!e.target.closest('#sName')&&!e.target.closest('#nameSuggest'))document.getElementById('nameSuggest').style.display='none';});
 
+/* ══ TOAST ══ */
 function toast(msg,type=''){
-  const d=document.createElement('div');d.className='toast';d.style.background=type==='e'?'#7f1d1d':'#064e3b';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),2500);
+  const d=document.createElement('div');d.className='toast';d.style.background=type==='e'?'#7F1D1D':'#064E3B';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),2500);
 }
 </script>
 </body>
