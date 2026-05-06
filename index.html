@@ -187,10 +187,16 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--t
 @media(max-width:440px){
   .gr2,.gr3,.gr4{grid-template-columns:1fr;}
 }
+  #mb-splash{position:fixed;inset:0;background:#1B6CA8;display:flex;align-items:center;justify-content:center;z-index:99999;transition:opacity .5s ease,visibility .5s ease;}
+#mb-splash.hide{opacity:0;visibility:hidden;pointer-events:none;}
+#mb-splash img{width:130px;animation:mb-lev 1.8s ease-in-out infinite;}
+@keyframes mb-lev{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
 </style>
 </head>
 <body>
 
+<div id="mb-splash"><img src="Open_MB_Icon.png" alt="Markaz Belajar"></div>
+<script>window.addEventListener("load",function(){setTimeout(function(){var s=document.getElementById("mb-splash");if(s)s.classList.add("hide");},2000);});</script>  
 <div id="LS"><div class="spin"></div><div style="color:var(--txt3);font-size:11px;letter-spacing:.07em;">MEMUAT DATA…</div></div>
 
 <div class="app">
