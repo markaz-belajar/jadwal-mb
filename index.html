@@ -412,6 +412,21 @@ body{background:#F4F6FA;}
 .stbl.gfocus .gb:not(.gf){opacity:.14;filter:grayscale(1);}
 .stbl.gfocus .gb.gf{opacity:1;box-shadow:0 0 0 2px var(--gc);}
 .stbl.gfocus .gb.gf.blk-cont .bz,.stbl.gfocus .gb.gf.blk-cont .bc{display:block;}
+
+/* ══ topbar ringkas + panel kontrol tersembunyi ══ */
+.tb-title{cursor:pointer;flex-shrink:0;}
+.tb-title h2{display:flex;align-items:center;gap:4px;}
+.chev{width:15px;height:15px;stroke:var(--ink-faint);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s;}
+.float-card:not(.ctl-hide) .chev{transform:rotate(180deg);}
+.float-card.ctl-hide .tab-wrap,.float-card.ctl-hide .filters,.float-card.ctl-hide .setpanel{display:none!important;}
+.topbar .greeting-right{min-width:0;gap:6px;justify-content:flex-end;}
+.topbar .nowbar{margin:0;padding:5px 10px;border-radius:50px;font-size:10.5px;gap:6px;min-width:0;white-space:nowrap;}
+.topbar .nowbar span{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.topbar .nowbar b{flex-shrink:0;}
+.nd.off{background:#9AA9B8;animation:none;}
+.setpanel{display:none;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E8ECF2;border-radius:14px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--ink-mid);}
+.setpanel.show{display:flex;}
+[data-theme="dark"] .setpanel{background:#162230;border-color:#1E2D3D;}
 </style>
 </head>
 <body>
@@ -425,12 +440,13 @@ body{background:#F4F6FA;}
 <div class="bokeh"></div>
 <div class="page">
 
-  <div class="float-card lev" id="floatCard">
+  <div class="float-card lev ctl-hide" id="floatCard">
   <div class="topbar">
-    <div><h2>Jadwal Belajar</h2><p id="greetDate">Memuat info…</p></div>
+    <div class="tb-title" onclick="toggleCtl()"><h2>Jadwal Belajar <svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></h2><p id="greetDate">Memuat info…</p></div>
     <div class="greeting-right">
+      <div class="nowbar" id="nowBar"></div>
       <div class="greeting-badge" id="adminBadge" style="display:none;">Admin</div>
-      <button class="dm-toggle" onclick="toggleDark()" title="Dark/Light Mode" id="dmBtn"><svg id="dmIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+      
     </div>
   </div>
 
@@ -476,8 +492,9 @@ body{background:#F4F6FA;}
         <button class="icon-btn" onclick="doRefresh()" title="Refresh">
           <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
         </button>
+        <button class="icon-btn" onclick="toggleSet()" title="Pengaturan"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       </div>
-      <div class="nowbar" id="nowBar"></div>
+      <div class="setpanel" id="setPanel"><span>Mode tampilan (terang / malam)</span><button class="dm-toggle" onclick="toggleDark()" title="Dark/Light Mode" id="dmBtn"><svg id="dmIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div>
       <div class="glegend" id="grpLegend"></div>
       <div class="sched-wrap">
         <table class="stbl">
@@ -934,7 +951,7 @@ function rSched(){
   applySpot();document.querySelector('.stbl').classList.toggle('gfocus',!!focusKey);
   const hh=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
   const act=Object.values(grpBy(list.filter(s=>s.day===today&&tm(s.start)<=nm&&nm<tm(s.end)),s=>`${s.teacher}|${s.zone}|${s.start}`));
-  document.getElementById('nowBar').innerHTML=`<i class="nd"></i><b>${hh}</b><span>`+(act.length?'Sedang mengajar: '+act.map(a=>`<b>${a[0].teacher.split(' ')[0]}</b> · ${a[0].zone}`).join(' &nbsp;•&nbsp; '):'Tidak ada kelas berlangsung')+'</span>';
+  document.getElementById('nowBar').innerHTML=`<i class="nd${act.length?'':' off'}"></i><b>${hh}</b><span>`+(act.length?act.map(a=>`<b>${a[0].teacher.split(' ')[0]}</b> · ${a[0].zone}`).join(' &nbsp;•&nbsp; '):'Tidak ada kelas')+'</span>';
   placeNow();
 }
 function placeNow(){
@@ -953,6 +970,8 @@ function toggleFocus(i){focusKey=focusKey===__gk[i]?null:__gk[i];rSched();}
 let spotOff=false,spotT=null;
 function applySpot(){document.querySelector('.stbl').classList.toggle('spot',!spotOff&&!focusKey&&!!document.querySelector('.now-cell'));}
 document.addEventListener('pointerdown',()=>{spotOff=true;applySpot();clearTimeout(spotT);spotT=setTimeout(()=>{spotOff=false;applySpot();},10000);},true);
+function toggleCtl(){document.getElementById('floatCard').classList.toggle('ctl-hide');setTimeout(placeNow,0);}
+function toggleSet(){document.getElementById('setPanel').classList.toggle('show');}
 function showSplash(ms){const sp=document.getElementById('splash');sp.classList.remove('hidden');setTimeout(()=>sp.classList.add('hidden'),ms);}
 setInterval(rSched,30000);window.addEventListener('resize',placeNow);
 
