@@ -374,6 +374,20 @@ body{background:#F4F6FA;}
 
 /* kartu jadwal diam di tempat */
 .float-card,.float-card.lev{animation:none!important;transform:none!important;}
+
+/* ══ SPOTLIGHT: kelas yang berlangsung sekarang ══ */
+.stbl tbody td,.stbl thead th,.stbl .ttd{transition:opacity .35s,filter .35s,transform .35s,box-shadow .35s;}
+.stbl.spot tbody td:not(.now-cell):not(.ttd){opacity:.3;filter:grayscale(.5) brightness(.96);}
+.stbl.spot thead th:not(.today){opacity:.5;}
+.stbl.spot tbody tr:not(.now-row) .ttd{opacity:.4;}
+.stbl.spot tr.now-row .ttd .ts{color:var(--blue);font-weight:800;}
+.stbl tbody td.now-cell{position:relative;z-index:8;overflow:visible;transform:scale(1.3);background:#fff;border:none;border-radius:14px;padding:4px;
+ box-shadow:0 0 0 5px rgba(27,108,168,.2),0 16px 30px -8px rgba(27,108,168,.5);}
+.now-cell .blk,.now-cell .blk-cont{opacity:1;box-shadow:none;}
+.now-cell .blk::after{display:none;}
+.now-cell .blk-cont .bz{display:block;}.now-cell .blk-cont .bc{display:inline-flex;}
+.now-cell .bn{font-size:11px;}.now-cell .wb-p{font-size:10px;padding:2px 7px;}
+[data-theme="dark"] .stbl tbody td.now-cell{background:#1B2B3D;}
 </style>
 </head>
 <body>
@@ -880,10 +894,12 @@ function rSched(){
       let wb='';
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,end)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,end));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
-      return`<td>${wb}${blocks}</td>`;
+      const isNow=day===today&&tm(slot)<=nm&&nm<tm(end);
+      return`<td class="${isNow&&(blocks||wb)?'now-cell':''}">${wb}${blocks}</td>`;
     }).join('');
-    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span></div></td>${tds}</tr>`;
+    return`<tr class="${eve?'er':''}${tm(slot)<=nm&&nm<tm(end)?' now-row':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span></div></td>${tds}</tr>`;
   }).join('');
+  document.querySelector('.stbl').classList.toggle('spot',!!document.querySelector('.now-cell'));
   const hh=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
   const act=Object.values(grpBy(list.filter(s=>s.day===today&&tm(s.start)<=nm&&nm<tm(s.end)),s=>`${s.teacher}|${s.zone}|${s.start}`));
   document.getElementById('nowBar').innerHTML=`<i class="nd"></i><b>${hh}</b><span>`+(act.length?'Sedang mengajar: '+act.map(a=>`<b>${a[0].teacher.split(' ')[0]}</b> · ${a[0].zone}`).join(' &nbsp;•&nbsp; '):'Tidak ada kelas berlangsung')+'</span>';
