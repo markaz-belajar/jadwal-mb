@@ -432,6 +432,11 @@ body{background:#F4F6FA;}
 .gtoggle{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E8ECF2;border-radius:50px;padding:4px 10px;font-size:10.5px;font-weight:600;font-family:var(--font);color:var(--ink-mid);margin-bottom:8px;cursor:pointer;}
 .gtoggle .chev{width:12px;height:12px;}.gtoggle.open .chev{transform:rotate(180deg);}
 [data-theme="dark"] .gtoggle{background:#162230;border-color:#1E2D3D;}
+
+/* baris tagihan */
+.stbl thead tr.billrow th{background:transparent!important;border:none!important;padding:0 1px 2px;box-shadow:none;cursor:pointer;}
+.bchip{display:block;margin:0 auto;font-size:9.5px;font-weight:800;border-radius:8px;padding:3px 0;font-family:var(--mono);}
+.bchip.up{background:#DDF5EA;color:#0B7A52;}.bchip.td{background:#FFE9C7;color:#9A5B00;}.bchip.od{background:#FFE1E1;color:#B42318;}
 </style>
 </head>
 <body>
@@ -702,6 +707,14 @@ body{background:#F4F6FA;}
   </div>
 </div>
 
+<!-- TAGIHAN -->
+<div class="ov" id="billOv">
+  <div class="mbox">
+    <div class="mhdr"><span class="mtitle" id="billTtl">Tagihan</span><button class="mclose" onclick="hideOv('billOv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mbody" id="billBody"></div>
+  </div>
+</div>
+
 <!-- EDIT JADWAL -->
 <div class="ov" id="editSchedOv">
   <div class="mbox">
@@ -853,10 +866,10 @@ document.addEventListener('DOMContentLoaded',async()=>{
     el.innerHTML=(i===0?TIMES.slice(0,-1):TIMES.slice(1)).map(t=>`<option>${t}</option>`).join('');
   });
   if(localStorage.getItem('mb_adm')==='1'){isAdmin=true;showAdminUI();}
-  bindForms();rAll();rSched();
+  bindForms();rAll();rSched();refreshBills();
 });
 
-async function doRefresh(){await loadData();rAll();rSched();toast('Data diperbarui');}
+async function doRefresh(){await loadData();rAll();rSched();refreshBills();toast('Data diperbarui');}
 
 /* ══ NAV ══ */
 function sw(name){
@@ -934,6 +947,10 @@ function rSched(){
   const dsort=set=>[...set].sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b)).map(d=>d.slice(0,3)).join('·');
   document.getElementById('grpLegend').innerHTML=Object.keys(gmap).sort().map(k=>`<button class="gchip${focusKey===k?' on':''}" style="--gc:${gcol(k)}" onclick="toggleFocus(${__gk.indexOf(k)})"><i></i><b>${k.split('|')[1]}</b><span>${dsort(gmap[k])}</span></button>`).join('');
   document.getElementById('schedHead').innerHTML='<tr><th class="thd"></th>'+DAYS.map((d,i)=>`<th class="${d===today?'today':''}"><span class="dn">${d.slice(0,3).toUpperCase()}</span><span class="dd">${wd[i].getDate()}</span></th>`).join('')+'</tr>';
+  const wk=wd.map(d=>{const x=new Date(d);x.setHours(0,0,0,0);return x.getTime();}),bd=DAYS.map(()=>[]);
+  BILLS.forEach(b=>{let i=wk.indexOf(b.date.getTime());if(i<0&&b.diff<0&&b.diff>=-14)i=DAYS.indexOf(today);if(i>=0)bd[i].push(b);});
+  window.__bd=bd;
+  if(bd.some(a=>a.length))document.getElementById('schedHead').innerHTML+='<tr class="billrow"><th class="thd"></th>'+bd.map((a,i)=>{if(!a.length)return'<th></th>';const c=a.some(b=>b.diff<0)?'od':a.some(b=>b.diff===0)?'td':'up';return`<th onclick="showBills(${i})"><span class="bchip ${c}">Rp ${a.length}</span></th>`;}).join('')+'</tr>';
   document.getElementById('schedBody').innerHTML=SLOTS.map(slot=>{
     const end=nh(slot),eve=tm(slot)>=tm('18:00');
     const tds=DAYS.map(day=>{
@@ -969,6 +986,48 @@ function placeNow(){
   L.style.display='block';L.style.top=(r.top-wr.top+((m-540)%60)/60*r.height)+'px';
   L.innerHTML='<span>'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+'</span>';
 }
+/* ══ TAGIHAN — dihitung dari backend invoice (invoice terakhir per siswa + durasi bulan, Sab/Min digeser ke Senin) ══ */
+const MB_INV_URL='https://script.google.com/macros/s/AKfycbxbyZtQyblDlDZgRyRLy_grf-W66O7nWwsL9vn1iI46GENgWtjAkcg5u7-LeBERXbiX7A/exec';
+function mbDate(s){const m=String(s||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return m?new Date(+m[1],+m[2]-1,+m[3]):null;}
+function mbBills(invs){
+  const today=new Date();today.setHours(0,0,0,0);let inact={};
+  try{inact=JSON.parse(localStorage.getItem('mrkz_inactive_students')||'{}');}catch(e){}
+  const latest={};
+  (invs||[]).forEach(v=>{const k=(v.student_name||'').trim().toLowerCase();if(!k)return;const c=latest[k];
+    if(!c||((v.created_date||'')+'|'+(v.invoice_number||''))>((c.created_date||'')+'|'+(c.invoice_number||'')))latest[k]=v;});
+  const out=[];
+  Object.keys(latest).forEach(k=>{
+    const v=latest[k];let dur=1;
+    (Array.isArray(v.invoice_items)?v.invoice_items:[]).forEach(it=>{const d=parseInt(it.dur)||0;if(d>dur)dur=d;});
+    const b=mbDate(v.created_date||v.payment_date);if(!b)return;
+    const d=new Date(b.getFullYear(),b.getMonth(),b.getDate());d.setMonth(d.getMonth()+dur);
+    const w=d.getDay();if(w===6)d.setDate(d.getDate()+2);else if(w===0)d.setDate(d.getDate()+1);
+    const f=inact[k];if(f&&f.invId===v.__backendId)return;
+    out.push({name:v.student_name,date:d,diff:Math.round((d-today)/86400000),unpaid:v.payment_status!=='paid'});
+  });
+  return out.sort((a,b)=>a.diff-b.diff);
+}
+async function mbLoadBills(key){
+  try{const r=await fetch(MB_INV_URL+'?action=getInvoices&t='+Date.now(),{cache:'no-store'});const j=await r.json();
+    if(j.invoices){const slim=j.invoices.map(v=>({student_name:v.student_name,created_date:v.created_date,payment_date:v.payment_date,invoice_number:v.invoice_number,invoice_items:v.invoice_items,payment_status:v.payment_status,__backendId:v.__backendId}));
+      try{localStorage.setItem(key,JSON.stringify(slim));}catch(e){}return slim;}}catch(e){}
+  try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return [];}
+}
+let BILLS=[];
+async function refreshBills(){
+  try{BILLS=mbBills(JSON.parse(localStorage.getItem('mb_bill_cache')||'[]'));rSched();}catch(e){}
+  BILLS=mbBills(await mbLoadBills('mb_bill_cache'));rSched();
+}
+function showBills(i){
+  const a=(window.__bd||[])[i]||[],wd=weekDates();
+  document.getElementById('billTtl').textContent='Tagihan · '+DAYS[i]+' '+wd[i].getDate();
+  document.getElementById('billBody').innerHTML=a.map(b=>{
+    const t=b.diff<0?'Lewat '+(-b.diff)+' hari — belum dibuat':b.diff===0?'Hari ini — saatnya buat invoice':b.diff+' hari lagi';
+    const c=b.diff<0?'#B42318':b.diff===0?'#9A5B00':'#0B7A52';
+    return `<div style="padding:10px 12px;background:#F1F4F9;border-radius:12px;margin-bottom:6px;"><b style="font-size:13px;">${b.name}</b><div style="font-size:11px;color:${c};font-weight:600;margin-top:2px;">${t}${b.unpaid?' · invoice terakhir belum lunas':''}</div></div>`;
+  }).join('')+'<div style="font-size:10.5px;color:var(--ink-faint);margin-top:8px;">Buat invoice di aplikasi Invoice Markaz Belajar.</div>';
+  showOv('billOv');
+}
 let focusKey=null,__gk=[];
 const GPAL=['#E5484D','#F76B15','#30A46C','#8E4EC6','#0091FF','#D6409F','#12A594','#AB6400','#6E56CF','#978365'];
 const gcol=k=>GPAL[Math.max(0,__gk.indexOf(k))%GPAL.length];
@@ -984,7 +1043,7 @@ function toggleLegend(){
 document.addEventListener('click',e=>{
   const ov=e.target.closest('.ov.show');if(!ov)return;
   if(e.target===ov){hideOv(ov.id);return;}
-  if((ov.id==='schedOv'||ov.id==='studDetailOv')&&!e.target.closest('button,.schip,select,input'))hideOv(ov.id);
+  if((ov.id==='schedOv'||ov.id==='studDetailOv'||ov.id==='billOv')&&!e.target.closest('button,.schip,select,input'))hideOv(ov.id);
 });
 function toggleCtl(){document.getElementById('floatCard').classList.toggle('ctl-hide');setTimeout(placeNow,0);}
 function toggleSet(){document.getElementById('setPanel').classList.toggle('show');}
