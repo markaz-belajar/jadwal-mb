@@ -398,6 +398,20 @@ body{background:#F4F6FA;}
 .stbl:not(.spot) .now-cell .blk-cont .bz,.stbl:not(.spot) .now-cell .blk-cont .bc{display:none;}
 .stbl:not(.spot) .now-cell .blk::after{display:block;}
 .stbl:not(.spot) .now-cell .bn{font-size:10.5px;}
+
+/* ══ identitas kelompok: warna + hari lain ══ */
+.glegend{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.gchip{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E8ECF2;border-radius:50px;padding:4px 9px;font-size:10px;font-family:var(--font);color:var(--ink);cursor:pointer;}
+.gchip i{width:9px;height:9px;border-radius:50%;background:var(--gc);}
+.gchip span{color:var(--ink-faint);font-family:var(--mono);font-size:9px;}
+.gchip.on{background:var(--gc);border-color:var(--gc);color:#fff;}.gchip.on span{color:rgba(255,255,255,.9);}
+[data-theme="dark"] .gchip{background:#162230;border-color:#1E2D3D;}
+.gb{border-left:4px solid var(--gc)!important;}
+.bd{font-size:8px;font-weight:800;line-height:1.2;margin-top:1px;opacity:.9;}
+.blk-cont .bd{display:none;}
+.stbl.gfocus .gb:not(.gf){opacity:.14;filter:grayscale(1);}
+.stbl.gfocus .gb.gf{opacity:1;box-shadow:0 0 0 2px var(--gc);}
+.stbl.gfocus .gb.gf.blk-cont .bz,.stbl.gfocus .gb.gf.blk-cont .bc{display:block;}
 </style>
 </head>
 <body>
@@ -464,6 +478,7 @@ body{background:#F4F6FA;}
         </button>
       </div>
       <div class="nowbar" id="nowBar"></div>
+      <div class="glegend" id="grpLegend"></div>
       <div class="sched-wrap">
         <table class="stbl">
           <thead id="schedHead"></thead>
@@ -889,6 +904,12 @@ const DOW=n=>(n.getDay()+6)%7;
 function weekDates(){const n=new Date(),m=new Date(n);m.setDate(n.getDate()-DOW(n));return DAYS.map((_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d;});}
 function rSched(){
   const list=getFiltered(),ft=document.getElementById('fTeacher').value,wd=weekDates(),n=new Date(),today=DAYS[DOW(n)],nm=n.getHours()*60+n.getMinutes();
+  const GK=x=>x.program+'|'+x.zone+'|'+x.type,gmap={};
+  list.forEach(x=>{(gmap[GK(x)]||(gmap[GK(x)]=new Set())).add(x.day);});
+  __gk=[...new Set(S.schedules.map(GK))].sort();
+  if(focusKey&&!gmap[focusKey])focusKey=null;
+  const dsort=set=>[...set].sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b)).map(d=>d.slice(0,3)).join('·');
+  document.getElementById('grpLegend').innerHTML=Object.keys(gmap).sort().map(k=>`<button class="gchip${focusKey===k?' on':''}" style="--gc:${gcol(k)}" onclick="toggleFocus(${__gk.indexOf(k)})"><i></i><b>${k.split('|')[1]}</b><span>${dsort(gmap[k])}</span></button>`).join('');
   document.getElementById('schedHead').innerHTML='<tr><th class="thd"></th>'+DAYS.map((d,i)=>`<th class="${d===today?'today':''}"><span class="dn">${d.slice(0,3).toUpperCase()}</span><span class="dd">${wd[i].getDate()}</span></th>`).join('')+'</tr>';
   document.getElementById('schedBody').innerHTML=SLOTS.map(slot=>{
     const end=nh(slot),eve=tm(slot)>=tm('18:00');
@@ -899,7 +920,8 @@ function rSched(){
         const g=arr[0],cnt=new Set(arr.map(x=>x.studentId)).size,fn=(g.teacher||'').split(' ')[0];
         const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
         const isStart=g.start===slot,live=day===today&&tm(g.start)<=nm&&nm<tm(g.end)?' live':'';
-        return`<div class="${isStart?'blk':'blk-cont'} ${cls}${live}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')"><div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${cnt}</div>${g.type==='private'?'<div class="bpv">PVT</div>':''}</div>`;
+        const key=GK(g),od=dsort(new Set([...gmap[key]].filter(d=>d!==day)));
+        return`<div class="${isStart?'blk':'blk-cont'} gb ${cls}${live}${focusKey===key?' gf':''}" style="--gc:${gcol(key)}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')"><div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${cnt}</div>${g.type==='private'?'<div class="bpv">PVT</div>':''}${od?`<div class="bd">+${od}</div>`:''}</div>`;
       }).join('');
       let wb='';
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,end)))wb='<span class="wb-p">WB</span>';}
@@ -909,7 +931,7 @@ function rSched(){
     }).join('');
     return`<tr class="${eve?'er':''}${tm(slot)<=nm&&nm<tm(end)?' now-row':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span></div></td>${tds}</tr>`;
   }).join('');
-  applySpot();
+  applySpot();document.querySelector('.stbl').classList.toggle('gfocus',!!focusKey);
   const hh=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
   const act=Object.values(grpBy(list.filter(s=>s.day===today&&tm(s.start)<=nm&&nm<tm(s.end)),s=>`${s.teacher}|${s.zone}|${s.start}`));
   document.getElementById('nowBar').innerHTML=`<i class="nd"></i><b>${hh}</b><span>`+(act.length?'Sedang mengajar: '+act.map(a=>`<b>${a[0].teacher.split(' ')[0]}</b> · ${a[0].zone}`).join(' &nbsp;•&nbsp; '):'Tidak ada kelas berlangsung')+'</span>';
@@ -924,8 +946,12 @@ function placeNow(){
   L.style.display='block';L.style.top=(r.top-wr.top+((m-540)%60)/60*r.height)+'px';
   L.innerHTML='<span>'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+'</span>';
 }
+let focusKey=null,__gk=[];
+const GPAL=['#E5484D','#F76B15','#30A46C','#8E4EC6','#0091FF','#D6409F','#12A594','#AB6400','#6E56CF','#978365'];
+const gcol=k=>GPAL[Math.max(0,__gk.indexOf(k))%GPAL.length];
+function toggleFocus(i){focusKey=focusKey===__gk[i]?null:__gk[i];rSched();}
 let spotOff=false,spotT=null;
-function applySpot(){document.querySelector('.stbl').classList.toggle('spot',!spotOff&&!!document.querySelector('.now-cell'));}
+function applySpot(){document.querySelector('.stbl').classList.toggle('spot',!spotOff&&!focusKey&&!!document.querySelector('.now-cell'));}
 document.addEventListener('pointerdown',()=>{spotOff=true;applySpot();clearTimeout(spotT);spotT=setTimeout(()=>{spotOff=false;applySpot();},10000);},true);
 function showSplash(ms){const sp=document.getElementById('splash');sp.classList.remove('hidden');setTimeout(()=>sp.classList.add('hidden'),ms);}
 setInterval(rSched,30000);window.addEventListener('resize',placeNow);
