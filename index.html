@@ -388,6 +388,16 @@ body{background:#F4F6FA;}
 .now-cell .blk-cont .bz{display:block;}.now-cell .blk-cont .bc{display:inline-flex;}
 .now-cell .bn{font-size:11px;}.now-cell .wb-p{font-size:10px;padding:2px 7px;}
 [data-theme="dark"] .stbl tbody td.now-cell{background:#1B2B3D;}
+
+/* spotlight lebih lembut + hilang saat disentuh */
+.stbl.spot tbody td:not(.now-cell):not(.ttd){opacity:.62;filter:grayscale(.15);}
+.stbl.spot thead th:not(.today){opacity:.78;}
+.stbl.spot tbody tr:not(.now-row) .ttd{opacity:.7;}
+.stbl:not(.spot) tbody td.now-cell{transform:none;box-shadow:none;z-index:auto;overflow:hidden;padding:3px;border:1px solid #EEF1F6;border-radius:10px;}
+.stbl:not(.spot) .now-cell .blk-cont{opacity:.55;}
+.stbl:not(.spot) .now-cell .blk-cont .bz,.stbl:not(.spot) .now-cell .blk-cont .bc{display:none;}
+.stbl:not(.spot) .now-cell .blk::after{display:block;}
+.stbl:not(.spot) .now-cell .bn{font-size:10.5px;}
 </style>
 </head>
 <body>
@@ -899,7 +909,7 @@ function rSched(){
     }).join('');
     return`<tr class="${eve?'er':''}${tm(slot)<=nm&&nm<tm(end)?' now-row':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span></div></td>${tds}</tr>`;
   }).join('');
-  document.querySelector('.stbl').classList.toggle('spot',!!document.querySelector('.now-cell'));
+  applySpot();
   const hh=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
   const act=Object.values(grpBy(list.filter(s=>s.day===today&&tm(s.start)<=nm&&nm<tm(s.end)),s=>`${s.teacher}|${s.zone}|${s.start}`));
   document.getElementById('nowBar').innerHTML=`<i class="nd"></i><b>${hh}</b><span>`+(act.length?'Sedang mengajar: '+act.map(a=>`<b>${a[0].teacher.split(' ')[0]}</b> · ${a[0].zone}`).join(' &nbsp;•&nbsp; '):'Tidak ada kelas berlangsung')+'</span>';
@@ -914,6 +924,9 @@ function placeNow(){
   L.style.display='block';L.style.top=(r.top-wr.top+((m-540)%60)/60*r.height)+'px';
   L.innerHTML='<span>'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+'</span>';
 }
+let spotOff=false,spotT=null;
+function applySpot(){document.querySelector('.stbl').classList.toggle('spot',!spotOff&&!!document.querySelector('.now-cell'));}
+document.addEventListener('pointerdown',()=>{spotOff=true;applySpot();clearTimeout(spotT);spotT=setTimeout(()=>{spotOff=false;applySpot();},10000);},true);
 function showSplash(ms){const sp=document.getElementById('splash');sp.classList.remove('hidden');setTimeout(()=>sp.classList.add('hidden'),ms);}
 setInterval(rSched,30000);window.addEventListener('resize',placeNow);
 
