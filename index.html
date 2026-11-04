@@ -364,6 +364,16 @@ body{background:#F4F6FA;}
 [data-theme="dark"] .sel-pill,[data-theme="dark"] .icon-btn,[data-theme="dark"] .nowbar,[data-theme="dark"] .stbl thead th,[data-theme="dark"] .stbl tbody td,[data-theme="dark"] .er td{background:#162230;border-color:#1E2D3D;}
 [data-theme="dark"] .stbl tbody td.ttd{background:transparent;}
 #authRow .btn{color:var(--ink-mid);}#authRow .btn-d{color:var(--red);}
+
+/* ══ SPLASH & LOADING: kembali polos seperti awal ══ */
+#splash{background:var(--blue);animation:none;filter:none;flex-direction:row;gap:0;}
+#splash img{width:130px;filter:none;animation:lev 1.8s ease-in-out infinite;}
+.splash-shadow{display:none;}
+#LS{background:var(--paper);animation:none;color:var(--ink-faint);}
+#LS .spin{border-color:var(--line);border-top-color:var(--blue);}
+
+/* kartu jadwal diam di tempat */
+.float-card,.float-card.lev{animation:none!important;transform:none!important;}
 </style>
 </head>
 <body>
