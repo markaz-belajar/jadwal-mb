@@ -263,41 +263,126 @@ html,body{height:100%;font-family:var(--font);background:var(--paper);color:var(
   body,.page,.content{height:auto!important;overflow:visible!important;}
   .card{border:1px solid #ccc;}
 }
+
+/* ══ REDESIGN: glass bokeh + floating schedule ══ */
+body{background:#1B6CA8;}
+.bokeh,#splash,#LS{background:
+ radial-gradient(circle at 12% 18%,rgba(255,255,255,.32) 0 46px,rgba(255,255,255,.10) 47px,transparent 90px),
+ radial-gradient(circle at 82% 12%,rgba(255,226,122,.40) 0 70px,rgba(255,226,122,.10) 72px,transparent 130px),
+ radial-gradient(circle at 70% 78%,rgba(255,255,255,.26) 0 90px,rgba(255,255,255,.08) 92px,transparent 160px),
+ radial-gradient(circle at 20% 82%,rgba(120,200,255,.45) 0 60px,rgba(120,200,255,.10) 62px,transparent 120px),
+ radial-gradient(circle at 48% 45%,rgba(255,255,255,.14) 0 38px,transparent 80px),
+ radial-gradient(circle at 92% 52%,rgba(255,255,255,.22) 0 34px,transparent 70px),
+ linear-gradient(160deg,#165C93,#2A86C6 50%,#58B1E0);background-size:140% 140%,140% 140%,140% 140%,140% 140%,140% 140%,140% 140%,100% 100%;animation:drift 18s ease-in-out infinite alternate;}
+.bokeh{position:fixed;inset:0;z-index:0;}
+[data-theme="dark"] .bokeh,[data-theme="dark"] #splash{filter:brightness(.55) saturate(1.1);}
+@keyframes drift{to{background-position:8% 6%,-6% 10%,5% -8%,-8% -5%,6% 8%,-4% 6%,0 0;}}
+#LS{color:#fff;}#LS .spin{border-color:rgba(255,255,255,.3);border-top-color:#fff;}
+#splash{flex-direction:column;gap:22px;transition:opacity .5s,visibility .5s;}
+#splash.hidden{display:flex;opacity:0;visibility:hidden;pointer-events:none;}
+#splash img{width:200px;filter:drop-shadow(0 30px 24px rgba(5,30,60,.35));}
+.splash-shadow{width:120px;height:14px;border-radius:50%;background:rgba(5,30,60,.35);filter:blur(8px);animation:sh 1.8s ease-in-out infinite;}
+@keyframes sh{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(.7);opacity:.3}}
+.page{max-width:780px;background:transparent;padding:16px 12px 28px;z-index:1;overflow:visible;}
+.float-card{background:rgba(255,255,255,.74);-webkit-backdrop-filter:blur(24px) saturate(1.5);backdrop-filter:blur(24px) saturate(1.5);border:1px solid rgba(255,255,255,.65);border-radius:28px;box-shadow:0 34px 60px -24px rgba(8,40,80,.55),inset 0 0 0 1px rgba(255,255,255,.3);padding:16px 12px 14px;}
+.float-card.lev{animation:flt 5.5s ease-in-out infinite;}
+@keyframes flt{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+[data-theme="dark"] .float-card{background:rgba(14,24,36,.72);border-color:rgba(255,255,255,.1);}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 6px 12px;}
+.topbar h2{font-family:var(--font-display);font-size:19px;font-weight:800;line-height:1.1;}
+.topbar p{font-size:11px;color:var(--ink-mid);margin-top:2px;}
+.tab-wrap{padding:0 0 10px;}
+.tab-bar{background:rgba(255,255,255,.45);border:none;}
+[data-theme="dark"] .tab-bar{background:rgba(255,255,255,.07);}
+.content{padding:0;}
+.filters{flex-wrap:nowrap;gap:6px;margin-bottom:10px;}
+.sel-pill{min-width:0;flex:1 1 0;background:rgba(255,255,255,.6);border:none;padding:8px 10px;font-size:11px;text-overflow:ellipsis;}
+.icon-btn{width:34px;height:34px;background:rgba(255,255,255,.6);border:none;}
+[data-theme="dark"] .sel-pill,[data-theme="dark"] .icon-btn{background:rgba(255,255,255,.08);}
+.nowbar{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.55);border-radius:14px;padding:8px 12px;font-size:11.5px;margin-bottom:10px;line-height:1.3;}
+[data-theme="dark"] .nowbar{background:rgba(255,255,255,.07);}
+.nowbar b{font-family:var(--mono);}
+.nd{width:9px;height:9px;border-radius:50%;background:#22C55E;flex-shrink:0;animation:pl 1.6s infinite;}
+@keyframes pl{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}100%{box-shadow:0 0 0 9px rgba(34,197,94,0)}}
+.sched-wrap{position:relative;overflow:visible;border:none;background:transparent;}
+.stbl{table-layout:fixed;border-spacing:4px;margin:-4px;width:calc(100% + 8px);}
+.stbl thead th{position:static;background:rgba(255,255,255,.8);border:none;border-radius:12px;padding:6px 0 5px;color:var(--blue);}
+.stbl thead th.thd{background:transparent;width:38px;min-width:0;padding:0;}
+.stbl thead th .dn{display:block;font-size:9.5px;font-weight:800;letter-spacing:.05em;}
+.stbl thead th .dd{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-top:1px;}
+.stbl thead th.today{background:var(--blue);color:#fff;box-shadow:0 6px 14px -4px rgba(27,108,168,.6);}
+.stbl thead th.today .dd{color:#fff;}
+[data-theme="dark"] .stbl thead th{background:rgba(255,255,255,.08);}
+.stbl tbody td{border:none;border-radius:10px;background:rgba(255,255,255,.42);padding:3px;min-width:0;height:52px;overflow:hidden;}
+.stbl tbody td.ttd{position:static;background:transparent;padding:0;text-align:center;}
+.er td,.er .ttd{background:rgba(255,255,255,.42);}.er td.ttd{background:transparent;}
+[data-theme="dark"] .stbl tbody td,[data-theme="dark"] .er td{background:rgba(255,255,255,.04);}
+[data-theme="dark"] .stbl tbody td.ttd{background:transparent;}
+.ts{font-size:10px;}.te{display:none;}
+.blk,.blk-cont{border-radius:9px;padding:5px 5px 4px;margin:0 0 2px;font-size:10px;border:none;box-shadow:none;border-top:none;position:relative;overflow:hidden;}
+.pr,.pp{background:#FFF3B8;color:#6B5200;border-left:3px solid #F5C400;}
+.er2,.ep{background:#DCEBFA;color:#0F4C81;border-left:3px solid #1B6CA8;}
+[data-theme="dark"] .pr,[data-theme="dark"] .pp{background:rgba(245,196,0,.22);color:#FFE27A;}
+[data-theme="dark"] .er2,[data-theme="dark"] .ep{background:rgba(27,108,168,.35);color:#BFE0FA;}
+.bn{font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bz{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.bc{background:rgba(0,0,0,.07);font-size:9px;padding:1px 4px;}
+.bc svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2;margin-right:2px;}
+.bpv{color:#DC2626;font-size:8px;}
+.blk-cont{opacity:.55;min-height:16px;}.blk-cont .bz,.blk-cont .bc{display:none;}
+.blk.live,.blk-cont.live{opacity:1;box-shadow:0 0 0 2px #22C55E,0 6px 14px -4px rgba(34,197,94,.5);}
+.blk.live::after{content:'';position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:#22C55E;animation:pl 1.6s infinite;}
+#nowLine{position:absolute;left:0;right:0;height:0;border-top:2px solid #EF4444;z-index:6;pointer-events:none;display:none;}
+#nowLine span{position:absolute;left:0;top:-9px;background:#EF4444;color:#fff;font:700 9px var(--mono);padding:2px 4px;border-radius:6px;}
+#authRow{padding:10px 0 0!important;}
+#authRow .btn{background:transparent;border:none;color:rgba(255,255,255,.85);font-size:12px;width:auto!important;margin:0 auto;}
+#authRow .btn-d{color:#FFD0D0;}
+/* popup di tengah */
+.ov{align-items:center!important;padding:20px;}
+.mbox,.lbox{border-radius:24px!important;max-width:420px;max-height:84vh;animation:pop .22s ease;box-shadow:0 30px 70px rgba(0,0,0,.35);}
+.mhdr{border-radius:24px 24px 0 0;}
+@keyframes pop{from{opacity:0;transform:scale(.93)}to{opacity:1;transform:none}}
+@media(max-width:400px){.stbl thead th .dn{font-size:8.5px}.bn{font-size:9.5px}}
+
+/* ══ CLEAN WHITE (ref) ══ */
+body{background:#F4F6FA;}
+.bokeh{background:#F4F6FA;animation:none;}
+[data-theme="dark"] .bokeh{filter:none;background:#0E1620;}
+.float-card{background:#fff;-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid #E8ECF2;box-shadow:0 18px 40px -20px rgba(28,43,58,.22);}
+[data-theme="dark"] .float-card{background:#141E2A;border-color:#1E2D3D;}
+.tab-bar{background:#F1F4F9;}
+.sel-pill,.icon-btn,.nowbar{background:#fff;border:1px solid #E8ECF2;}
+.stbl thead th{background:#fff;border:1px solid #E8ECF2;color:var(--ink);}
+.stbl thead th .dn{color:var(--blue);}
+.stbl thead th.today{background:#fff;color:var(--blue);border:1.5px solid var(--blue);box-shadow:none;}
+.stbl thead th.today .dd{color:var(--blue);}
+.stbl tbody td,.er td{background:#fff;border:1px solid #EEF1F6;}
+.stbl tbody td.ttd,.er td.ttd{background:transparent;border:none;}
+.blk,.blk-cont{border-left:none;}
+.pr,.pp{background:#FFF4BF;color:#6B5200;}
+.er2,.ep{background:#E3F0FC;color:#0F4C81;}
+[data-theme="dark"] .sel-pill,[data-theme="dark"] .icon-btn,[data-theme="dark"] .nowbar,[data-theme="dark"] .stbl thead th,[data-theme="dark"] .stbl tbody td,[data-theme="dark"] .er td{background:#162230;border-color:#1E2D3D;}
+[data-theme="dark"] .stbl tbody td.ttd{background:transparent;}
+#authRow .btn{color:var(--ink-mid);}#authRow .btn-d{color:var(--red);}
 </style>
 </head>
 <body>
 
 <!-- SPLASH -->
-<div id="splash"><img src="Open_MB_Icon.png" alt="Markaz Belajar"/></div>
+<div id="splash"><img src="Open_MB_Icon.png" alt="Markaz Belajar"/><div class="splash-shadow"></div></div>
 
 <!-- LOADING -->
 <div id="LS"><div class="spin"></div><div style="color:var(--ink-faint);font-size:11px;letter-spacing:.07em;font-family:var(--font);">MEMUAT DATA…</div></div>
 
+<div class="bokeh"></div>
 <div class="page">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="hbs hbs-1"></div>
-    <div class="hbs hbs-2"></div>
-    <div class="hbs hbs-3"></div>
-    <div class="header-inner">
-      <img class="header-logo" src="Open_MB_Icon.png" alt="Markaz Belajar"/>
-    </div>
-  </div>
-
-  <!-- GREETING CARD -->
-  <div class="greeting-wrap">
-    <div class="greeting-card">
-      <div>
-        <h2>Jadwal Belajar</h2>
-        <p id="greetDate">Memuat info…</p>
-      </div>
-      <div class="greeting-right">
-        <div class="greeting-badge" id="adminBadge" style="display:none;">Admin</div>
-        <button class="dm-toggle" onclick="toggleDark()" title="Dark/Light Mode" id="dmBtn">
-          <svg id="dmIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-        </button>
-      </div>
+  <div class="float-card lev" id="floatCard">
+  <div class="topbar">
+    <div><h2>Jadwal Belajar</h2><p id="greetDate">Memuat info…</p></div>
+    <div class="greeting-right">
+      <div class="greeting-badge" id="adminBadge" style="display:none;">Admin</div>
+      <button class="dm-toggle" onclick="toggleDark()" title="Dark/Light Mode" id="dmBtn"><svg id="dmIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
     </div>
   </div>
 
@@ -344,9 +429,10 @@ html,body{height:100%;font-family:var(--font);background:var(--paper);color:var(
           <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
         </button>
       </div>
+      <div class="nowbar" id="nowBar"></div>
       <div class="sched-wrap">
         <table class="stbl">
-          <thead><tr><th class="thd">Waktu</th><th>Senin</th><th>Selasa</th><th>Rabu</th><th>Kamis</th><th>Jumat</th><th>Sabtu</th><th>Minggu</th></tr></thead>
+          <thead id="schedHead"></thead>
           <tbody id="schedBody"></tbody>
         </table>
       </div>
@@ -502,6 +588,7 @@ html,body{height:100%;font-family:var(--font);background:var(--paper);color:var(
     </div><!-- /view-manage -->
 
   </div><!-- /content -->
+  </div><!-- /float-card -->
 
   <!-- AUTH ROW (login/logout floating) -->
   <div style="text-align:center;padding:0 16px 16px;" id="authRow">
@@ -520,7 +607,7 @@ html,body{height:100%;font-family:var(--font);background:var(--paper);color:var(
 <!-- ══ OVERLAYS ══ -->
 
 <!-- LOGIN -->
-<div class="ov" id="loginOv" style="align-items:flex-end;">
+<div class="ov" id="loginOv">
   <div class="lbox">
     <div class="ltitle">Login Admin</div>
     <div class="lsub">Masukkan kredensial untuk akses panel admin</div>
@@ -703,6 +790,8 @@ async function doRefresh(){await loadData();rAll();rSched();toast('Data diperbar
 function sw(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
   const el=document.getElementById('view-'+name);if(el)el.classList.add('on');
+  document.getElementById('floatCard').classList.toggle('lev',name==='schedule');
+  if(name==='schedule')setTimeout(placeNow,0);
   if(name==='summary')rSummary();
   if(name==='manage'){rZones();rTeach();rStud();rWb();}
 }
@@ -728,7 +817,7 @@ function doLogin(){
   if(u===ADMIN_USER&&p===ADMIN_PASS){
     isAdmin=true;localStorage.setItem('mb_adm','1');showAdminUI();hideOv('loginOv');
     document.getElementById('lUser').value='';document.getElementById('lPass').value='';err.style.display='none';
-    toast('Selamat datang, Admin!');
+    sw('schedule');tnbOn(document.getElementById('tnb-schedule'));showSplash(1600);toast('Selamat datang, Admin!');
   }else{err.style.display='block';}
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.getElementById('loginOv').classList.contains('show'))doLogin();});
@@ -762,8 +851,11 @@ function getFiltered(){
   });
 }
 
+const DOW=n=>(n.getDay()+6)%7;
+function weekDates(){const n=new Date(),m=new Date(n);m.setDate(n.getDate()-DOW(n));return DAYS.map((_,i)=>{const d=new Date(m);d.setDate(m.getDate()+i);return d;});}
 function rSched(){
-  const list=getFiltered(),ft=document.getElementById('fTeacher').value;
+  const list=getFiltered(),ft=document.getElementById('fTeacher').value,wd=weekDates(),n=new Date(),today=DAYS[DOW(n)],nm=n.getHours()*60+n.getMinutes();
+  document.getElementById('schedHead').innerHTML='<tr><th class="thd"></th>'+DAYS.map((d,i)=>`<th class="${d===today?'today':''}"><span class="dn">${d.slice(0,3).toUpperCase()}</span><span class="dd">${wd[i].getDate()}</span></th>`).join('')+'</tr>';
   document.getElementById('schedBody').innerHTML=SLOTS.map(slot=>{
     const end=nh(slot),eve=tm(slot)>=tm('18:00');
     const tds=DAYS.map(day=>{
@@ -772,19 +864,32 @@ function rSched(){
       const blocks=Object.values(groups).map(arr=>{
         const g=arr[0],cnt=new Set(arr.map(x=>x.studentId)).size,fn=(g.teacher||'').split(' ')[0];
         const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
-        const isStart=g.start===slot;
-        const blkCls=isStart?`blk ${cls}`:`blk-cont ${cls}`;
-        const contLabel=isStart?'':`<div style="font-size:9px;opacity:.55;margin-bottom:1px;">↳ ${g.start}–${g.end}</div>`;
-        return`<div class="${blkCls}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')">${contLabel}<div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc">${cnt} siswa</div>${g.type==='private'?'<div class="bpv">PRIVATE</div>':''}</div>`;
+        const isStart=g.start===slot,live=day===today&&tm(g.start)<=nm&&nm<tm(g.end)?' live':'';
+        return`<div class="${isStart?'blk':'blk-cont'} ${cls}${live}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')"><div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${cnt}</div>${g.type==='private'?'<div class="bpv">PVT</div>':''}</div>`;
       }).join('');
       let wb='';
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,end)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,end));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
       return`<td>${wb}${blocks}</td>`;
     }).join('');
-    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span><span class="te">${end}</span></div></td>${tds}</tr>`;
+    return`<tr class="${eve?'er':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span></div></td>${tds}</tr>`;
   }).join('');
+  const hh=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  const act=Object.values(grpBy(list.filter(s=>s.day===today&&tm(s.start)<=nm&&nm<tm(s.end)),s=>`${s.teacher}|${s.zone}|${s.start}`));
+  document.getElementById('nowBar').innerHTML=`<i class="nd"></i><b>${hh}</b><span>`+(act.length?'Sedang mengajar: '+act.map(a=>`<b>${a[0].teacher.split(' ')[0]}</b> · ${a[0].zone}`).join(' &nbsp;•&nbsp; '):'Tidak ada kelas berlangsung')+'</span>';
+  placeNow();
 }
+function placeNow(){
+  const w=document.querySelector('.sched-wrap'),rows=document.getElementById('schedBody').children,n=new Date(),m=n.getHours()*60+n.getMinutes();
+  let L=document.getElementById('nowLine');if(!L){L=document.createElement('div');L.id='nowLine';w.appendChild(L);}
+  const i=Math.floor((m-540)/60);
+  if(i<0||i>=rows.length||!w.offsetParent){L.style.display='none';return;}
+  const r=rows[i].getBoundingClientRect(),wr=w.getBoundingClientRect();
+  L.style.display='block';L.style.top=(r.top-wr.top+((m-540)%60)/60*r.height)+'px';
+  L.innerHTML='<span>'+String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+'</span>';
+}
+function showSplash(ms){const sp=document.getElementById('splash');sp.classList.remove('hidden');setTimeout(()=>sp.classList.add('hidden'),ms);}
+setInterval(rSched,30000);window.addEventListener('resize',placeNow);
 
 function openSchedDetail(program,zone,teacher,type,day,start,end){
   const grouped=S.schedules.filter(s=>s.program===program&&s.zone===zone&&s.teacher===teacher&&s.type===type&&s.day===day&&s.start===start&&s.end===end).filter(s=>{const st=S.students.find(x=>x.id===s.studentId);return st&&st.active!==false;});
