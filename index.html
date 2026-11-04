@@ -427,6 +427,11 @@ body{background:#F4F6FA;}
 .setpanel{display:none;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E8ECF2;border-radius:14px;padding:8px 12px;margin-bottom:10px;font-size:12px;color:var(--ink-mid);}
 .setpanel.show{display:flex;}
 [data-theme="dark"] .setpanel{background:#162230;border-color:#1E2D3D;}
+
+.glegend{display:none;}.glegend.open{display:flex;}
+.gtoggle{display:inline-flex;align-items:center;gap:5px;background:#fff;border:1px solid #E8ECF2;border-radius:50px;padding:4px 10px;font-size:10.5px;font-weight:600;font-family:var(--font);color:var(--ink-mid);margin-bottom:8px;cursor:pointer;}
+.gtoggle .chev{width:12px;height:12px;}.gtoggle.open .chev{transform:rotate(180deg);}
+[data-theme="dark"] .gtoggle{background:#162230;border-color:#1E2D3D;}
 </style>
 </head>
 <body>
@@ -495,6 +500,7 @@ body{background:#F4F6FA;}
         <button class="icon-btn" onclick="toggleSet()" title="Pengaturan"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       </div>
       <div class="setpanel" id="setPanel"><span>Mode tampilan (terang / malam)</span><button class="dm-toggle" onclick="toggleDark()" title="Dark/Light Mode" id="dmBtn"><svg id="dmIcon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button></div>
+      <button class="gtoggle" id="gToggle" onclick="toggleLegend()"><span>Kelompok</span><svg class="chev" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
       <div class="glegend" id="grpLegend"></div>
       <div class="sched-wrap">
         <table class="stbl">
@@ -970,6 +976,16 @@ function toggleFocus(i){focusKey=focusKey===__gk[i]?null:__gk[i];rSched();}
 let spotOff=false,spotT=null;
 function applySpot(){document.querySelector('.stbl').classList.toggle('spot',!spotOff&&!focusKey&&!!document.querySelector('.now-cell'));}
 document.addEventListener('pointerdown',()=>{spotOff=true;applySpot();clearTimeout(spotT);spotT=setTimeout(()=>{spotOff=false;applySpot();},10000);},true);
+function toggleLegend(){
+  const L=document.getElementById('grpLegend'),B=document.getElementById('gToggle'),open=!L.classList.contains('open');
+  L.classList.toggle('open',open);B.classList.toggle('open',open);
+  if(!open&&focusKey){focusKey=null;rSched();}
+}
+document.addEventListener('click',e=>{
+  const ov=e.target.closest('.ov.show');if(!ov)return;
+  if(e.target===ov){hideOv(ov.id);return;}
+  if((ov.id==='schedOv'||ov.id==='studDetailOv')&&!e.target.closest('button,.schip,select,input'))hideOv(ov.id);
+});
 function toggleCtl(){document.getElementById('floatCard').classList.toggle('ctl-hide');setTimeout(placeNow,0);}
 function toggleSet(){document.getElementById('setPanel').classList.toggle('show');}
 function showSplash(ms){const sp=document.getElementById('splash');sp.classList.remove('hidden');setTimeout(()=>sp.classList.add('hidden'),ms);}
