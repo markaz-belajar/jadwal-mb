@@ -437,6 +437,19 @@ body{background:#F4F6FA;}
 .stbl thead tr.billrow th{background:transparent!important;border:none!important;padding:0 1px 2px;box-shadow:none;cursor:pointer;}
 .bchip{display:block;margin:0 auto;font-size:9.5px;font-weight:800;border-radius:8px;padding:3px 0;font-family:var(--mono);}
 .bchip.up{background:#DDF5EA;color:#0B7A52;}.bchip.td{background:#FFE9C7;color:#9A5B00;}.bchip.od{background:#FFE1E1;color:#B42318;}
+
+/* ══ TAMBAH ANAK LANGSUNG DARI JADWAL ══ */
+.ak-sel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.ak-info{font-size:12px;color:var(--ink-mid);font-weight:600;margin-bottom:10px;}
+.ak-row{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;background:var(--surface2);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:6px;cursor:pointer;font-family:var(--font);color:var(--ink);}
+.ak-row:active{background:var(--blue-light);}
+.ak-row.dis{opacity:.45;cursor:default;}
+.ak-name{font-size:13px;font-weight:600;}
+.ak-meta{font-size:11px;color:var(--ink-faint);margin-top:2px;}
+.ak-meta.warn{color:#9A5B00;font-weight:600;}
+.ak-add{font-size:11px;font-weight:700;color:#fff;background:var(--blue);border-radius:50px;padding:5px 11px;white-space:nowrap;}
+.ak-hint{font-size:12px;color:var(--ink-faint);padding:8px 0;}
+#akList{max-height:50vh;overflow-y:auto;}
 </style>
 </head>
 <body>
@@ -777,6 +790,24 @@ body{background:#F4F6FA;}
   <div class="mbox sm">
     <div class="mhdr"><span class="mtitle">Detail Siswa</span><button class="mclose" onclick="hideOv('studDetailOv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
     <div class="mbody" id="studDetailBody"></div>
+  </div>
+</div>
+
+<!-- TAMBAH ANAK KE KELAS -->
+<div class="ov" id="addKidOv">
+  <div class="mbox">
+    <div class="mhdr"><span class="mtitle" id="akTitle">Tambah Anak</span><button class="mclose" onclick="hideOv('addKidOv')"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="mbody">
+      <div class="ak-info" id="akInfo"></div>
+      <div class="ak-sel" id="akSelRow">
+        <select id="akProg" class="inp" onchange="akProgChange()"><option value="preschool">Preschool</option><option value="elementary">Elementary</option></select>
+        <select id="akZone" class="inp" onchange="akSet()"></select>
+        <select id="akTeach" class="inp" onchange="akSet()"></select>
+        <select id="akType" class="inp" onchange="akSet()"><option value="regular">Reguler (maks 6)</option><option value="private">Private</option></select>
+      </div>
+      <input id="akSearch" class="inp" placeholder="Cari nama anak…" oninput="renderAkList()" style="margin-bottom:10px;">
+      <div id="akList"></div>
+    </div>
   </div>
 </div>
 
@@ -1288,6 +1319,91 @@ document.addEventListener('click',e=>{if(!e.target.closest('#sName')&&!e.target.
 function toast(msg,type=''){
   const d=document.createElement('div');d.className='toast';d.style.background=type==='e'?'#7F1D1D':'#064E3B';d.textContent=msg;document.body.appendChild(d);setTimeout(()=>d.remove(),2500);
 }
+
+/* ══ TAMBAH ANAK LANGSUNG DARI JADWAL ══ */
+let akCtx=null;
+const akHasClass=id=>S.schedules.some(s=>s.studentId===id);
+const akBusy=(id,day,start,end)=>S.schedules.some(s=>s.studentId===id&&s.day===day&&ro(s.start,s.end,start,end));
+function akInClass(c){return new Set(S.schedules.filter(s=>s.program===c.program&&s.zone===c.zone&&s.teacher===c.teacher&&s.type===c.type&&s.day===c.day&&s.start===c.start&&s.end===c.end).map(s=>s.studentId));}
+
+function openAddKid(ctx){
+  akCtx=Object.assign({program:'preschool',zone:'',teacher:'',type:'regular',day:'',start:'',end:'',locked:false},ctx);
+  document.getElementById('akSearch').value='';
+  document.getElementById('akSelRow').style.display=akCtx.locked?'none':'grid';
+  if(!akCtx.locked){
+    document.getElementById('akProg').value=akCtx.program;
+    akFillZones();
+    document.getElementById('akTeach').innerHTML='<option value="">Pilih guru</option>'+S.teachers.filter(t=>t.active!==false).map(t=>`<option ${t.name===akCtx.teacher?'selected':''}>${t.name}</option>`).join('');
+    document.getElementById('akType').value=akCtx.type;
+  }
+  document.getElementById('akTitle').textContent=akCtx.locked?`${akCtx.zone} · ${akCtx.teacher}`:'Tambah Anak ke Kelas';
+  document.getElementById('akInfo').textContent=`${akCtx.day} · ${akCtx.start}–${akCtx.end}`+(akCtx.locked?` · ${akCtx.type==='regular'?'Reguler':'Private'}`:'');
+  renderAkList();
+  showOv('addKidOv');
+}
+function akFillZones(){
+  document.getElementById('akZone').innerHTML='<option value="">Pilih zona</option>'+S.zones.filter(z=>z.program===akCtx.program&&z.active!==false).map(z=>`<option ${z.name===akCtx.zone?'selected':''}>${z.name}</option>`).join('');
+}
+function akProgChange(){akCtx.program=document.getElementById('akProg').value;akCtx.zone='';akFillZones();renderAkList();}
+function akSet(){
+  akCtx.zone=document.getElementById('akZone').value;
+  akCtx.teacher=document.getElementById('akTeach').value;
+  akCtx.type=document.getElementById('akType').value;
+  renderAkList();
+}
+function renderAkList(){
+  const box=document.getElementById('akList'),c=akCtx;
+  if(!c.zone||!c.teacher){box.innerHTML='<div class="ak-hint">Pilih zona dan guru dulu untuk melihat daftar anak.</div>';return;}
+  const inC=akInClass(c),cap=c.type==='regular'?6:Infinity,full=inC.size>=cap;
+  const q=(document.getElementById('akSearch').value||'').trim().toLowerCase();
+  const rank=s=>inC.has(s.id)?2:(!akHasClass(s.id)?0:1);
+  const pool=S.students
+    .filter(s=>s.program===c.program&&s.active!==false&&s.name.toLowerCase().includes(q))
+    .sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
+  const head=`<div class="ak-hint">${cap===Infinity?'':inC.size+'/'+cap+' terisi · '}Anak yang belum punya kelas tampil paling atas</div>`;
+  const rows=pool.map(s=>{
+    const here=inC.has(s.id),busy=!here&&akBusy(s.id,c.day,c.start,c.end),none=!akHasClass(s.id);
+    const dis=here||busy||full;
+    const meta=here?'✓ Sudah di kelas ini':busy?'Bentrok — sudah ada kelas di jam ini':full?'Kelas penuh':none?'Belum punya kelas':'Kelas '+(s.grade||'-')+' · '+(s.zone||'-');
+    return `<button class="ak-row${dis?' dis':''}"${dis?' disabled':''} onclick="addKidToClass(${s.id})"><div><div class="ak-name">${s.name}</div><div class="ak-meta${none&&!dis?' warn':''}">${meta}</div></div>${dis?'':'<span class="ak-add">+ Tambah</span>'}</button>`;
+  }).join('');
+  box.innerHTML=head+(rows||`<div class="ak-hint">Tidak ada siswa ${c.program} ditemukan.</div>`);
+}
+async function addKidToClass(id){
+  const c=akCtx,st=S.students.find(x=>x.id===id);
+  if(!c||!st)return;
+  if(akInClass(c).size>=(c.type==='regular'?6:Infinity))return toast('Kelas reguler sudah penuh (maks 6)','e');
+  if(akBusy(id,c.day,c.start,c.end))return toast('Anak sudah punya kelas di jam ini','e');
+  if(S.holidays.some(h=>h.teacher===c.teacher&&h.day===c.day&&ro(h.start,h.end,c.start,c.end)))return toast('Guru sedang break di jam ini','e');
+  S.schedules.push({id:Date.now()+Math.random(),program:c.program,zone:c.zone,type:c.type,teacher:c.teacher,studentId:st.id,studentName:st.name,day:c.day,start:c.start,end:c.end});
+  if(!st.zone)st.zone=c.zone;
+  if(!st.program)st.program=c.program;
+  await saveAll();
+  rSched();rSummary();rStud();rZones();renderAkList();
+  toast(`${st.name} masuk kelas ${c.zone}`);
+}
+
+/* Klik sel kosong di grid jadwal → langsung muncul daftar anak */
+document.getElementById('schedBody').addEventListener('click',e=>{
+  const td=e.target.closest('td');
+  if(!td||td.classList.contains('ttd')||e.target.closest('.gb,.wb-p'))return;
+  const tr=td.parentElement;
+  const slot=SLOTS[[...tr.parentElement.children].indexOf(tr)];
+  const day=DAYS[td.cellIndex-1];
+  if(!slot||!day)return;
+  if(!isAdmin)return toast('Login admin untuk menambah anak','e');
+  openAddKid({day,start:slot,end:nh(slot),locked:false});
+});
+
+/* Tombol "+ Tambah Anak" di popup detail kelas */
+const _openSchedDetailOrig=openSchedDetail;
+openSchedDetail=function(program,zone,teacher,type,day,start,end){
+  _openSchedDetailOrig(program,zone,teacher,type,day,start,end);
+  const old=document.getElementById('akBtnWrap');if(old)old.remove();
+  if(!isAdmin)return;
+  document.getElementById('schedStudentList').insertAdjacentHTML('afterend',
+    `<div id="akBtnWrap" style="margin-top:12px;"><button class="btn btn-p" style="width:100%;justify-content:center;" onclick="hideOv('schedOv');openAddKid({program:'${program}',zone:'${zone}',teacher:'${teacher}',type:'${type}',day:'${day}',start:'${start}',end:'${end}',locked:true})">+ Tambah Anak ke Kelas Ini</button></div>`);
+};
 </script>
 </body>
 </html>
