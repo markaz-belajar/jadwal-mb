@@ -1339,7 +1339,7 @@ function toast(msg,type=''){
 let akCtx=null;
 const akHasClass=id=>S.schedules.some(s=>s.studentId===id);
 const akBusy=(id,day,start,end)=>S.schedules.some(s=>s.studentId===id&&s.day===day&&ro(s.start,s.end,start,end));
-function akInClass(c){return new Set(S.schedules.filter(s=>s.program===c.program&&s.zone===c.zone&&s.teacher===c.teacher&&s.type===c.type&&s.day===c.day&&s.start===c.start&&s.end===c.end).map(s=>s.studentId));}
+function akInClass(c){return new Set(S.schedules.filter(s=>s.program===c.program&&s.zone===c.zone&&s.teacher===c.teacher&&s.type===c.type&&s.start===c.start&&s.end===c.end).map(s=>s.studentId));}
 
 function openAddKid(ctx){
   akCtx=Object.assign({program:'preschool',zone:'',teacher:'',type:'regular',day:'',start:'',end:'',locked:false},ctx);
@@ -1352,7 +1352,7 @@ function openAddKid(ctx){
     document.getElementById('akType').value=akCtx.type;
   }
   document.getElementById('akTitle').textContent=akCtx.locked?`${akCtx.zone} · ${akCtx.teacher}`:'Tambah Anak ke Kelas';
-  document.getElementById('akInfo').textContent=`${akCtx.day} · ${akCtx.start}–${akCtx.end}`+(akCtx.locked?` · ${akCtx.type==='regular'?'Reguler':'Private'}`:'');
+  document.getElementById('akInfo').textContent=`${(akCtx.days||[akCtx.day]).join(' · ')} · ${akCtx.start}–${akCtx.end}`+(akCtx.locked?` · ${akCtx.type==='regular'?'Reguler':'Private'}`:'');
   renderAkList();
   showOv('addKidOv');
 }
@@ -1377,7 +1377,7 @@ function renderAkList(){
     .sort((a,b)=>rank(a)-rank(b)||a.name.localeCompare(b.name));
   const head=`<div class="ak-hint">${cap===Infinity?'':inC.size+'/'+cap+' terisi · '}Anak yang belum punya kelas tampil paling atas</div>`;
   const rows=pool.map(s=>{
-    const here=inC.has(s.id),busy=!here&&akBusy(s.id,c.day,c.start,c.end),none=!akHasClass(s.id);
+    const here=inC.has(s.id),busy=!here&&(c.days||[c.day]).some(d=>akBusy(s.id,d,c.start,c.end)),none=!akHasClass(s.id);
     const dis=here||busy||full;
     const meta=here?'✓ Sudah di kelas ini':busy?'Bentrok — sudah ada kelas di jam ini':full?'Kelas penuh':none?'Belum punya kelas':'Kelas '+(s.grade||'-')+' · '+(s.zone||'-');
     return `<button class="ak-row${dis?' dis':''}"${dis?' disabled':''} onclick="addKidToClass(${s.id})"><div><div class="ak-name">${s.name}</div><div class="ak-meta${none&&!dis?' warn':''}">${meta}</div></div>${dis?'':'<span class="ak-add">+ Tambah</span>'}</button>`;
@@ -1387,10 +1387,11 @@ function renderAkList(){
 async function addKidToClass(id){
   const c=akCtx,st=S.students.find(x=>x.id===id);
   if(!c||!st)return;
+  const days=c.days||[c.day];
   if(akInClass(c).size>=(c.type==='regular'?6:Infinity))return toast('Kelas reguler sudah penuh (maks 6)','e');
-  if(akBusy(id,c.day,c.start,c.end))return toast('Anak sudah punya kelas di jam ini','e');
-  if(S.holidays.some(h=>h.teacher===c.teacher&&h.day===c.day&&ro(h.start,h.end,c.start,c.end)))return toast('Guru sedang break di jam ini','e');
-  S.schedules.push({id:Date.now()+Math.random(),program:c.program,zone:c.zone,type:c.type,teacher:c.teacher,studentId:st.id,studentName:st.name,day:c.day,start:c.start,end:c.end});
+  if(days.some(d=>akBusy(id,d,c.start,c.end)))return toast('Anak sudah punya kelas di jam ini','e');
+  if(days.some(d=>S.holidays.some(h=>h.teacher===c.teacher&&h.day===d&&ro(h.start,h.end,c.start,c.end))))return toast('Guru sedang break di jam ini','e');
+  days.forEach(d=>S.schedules.push({id:Date.now()+Math.random(),program:c.program,zone:c.zone,type:c.type,teacher:c.teacher,studentId:st.id,studentName:st.name,day:d,start:c.start,end:c.end}));
   if(!st.zone)st.zone=c.zone;
   if(!st.program)st.program=c.program;
   await saveAll();
@@ -1415,27 +1416,45 @@ async function removeKidFromClass(id,program,zone,teacher,type,day,start,end){
   const g={program,zone,teacher,type,day,start,end};
   const st=S.students.find(x=>x.id===id);
   if(!confirm(`Keluarkan ${st?st.name:'siswa'} dari kelas ini?`))return;
-  S.schedules=S.schedules.filter(s=>!(s.studentId===id&&sameGrp(s,g)));
+  S.schedules=S.schedules.filter(s=>!(s.studentId===id&&s.program===g.program&&s.zone===g.zone&&s.teacher===g.teacher&&s.type===g.type&&s.start===g.start&&s.end===g.end));
   await saveAll();rSched();rSummary();
-  const left=S.schedules.some(s=>sameGrp(s,g)&&S.students.some(x=>x.id===s.studentId&&x.active!==false));
+  const left=S.schedules.some(s=>s.program===g.program&&s.zone===g.zone&&s.teacher===g.teacher&&s.type===g.type&&s.start===g.start&&s.end===g.end&&S.students.some(x=>x.id===s.studentId&&x.active!==false));
   hideOv('studDetailOv');
   if(left)openSchedDetail(program,zone,teacher,type,day,start,end);else hideOv('schedOv');
   toast('Siswa dikeluarkan dari kelas');
 }
 
-/* Popup detail kelas: Tambah & Edit di header, Hapus Kelas di footer */
+/* Popup detail kelas: semua hari kelas & hari tiap anak */
 let grpCtx=null;
+function openAddFromGrp(){const g=grpCtx;hideOv('schedOv');openAddKid(Object.assign({},g,{locked:true}));}
 const _openSchedDetailOrig2=openSchedDetail;
 openSchedDetail=function(program,zone,teacher,type,day,start,end){
   _openSchedDetailOrig2(program,zone,teacher,type,day,start,end);
-  grpCtx={program,zone,teacher,type,day,start,end};
+  const base=s=>s.program===program&&s.zone===zone&&s.teacher===teacher&&s.type===type&&s.start===start&&s.end===end;
+  const actv=s=>S.students.some(x=>x.id===s.studentId&&x.active!==false);
+  const allDays=[...new Set(S.schedules.filter(s=>base(s)&&actv(s)).map(s=>s.day))].sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b));
+  const ids=[...new Map(S.schedules.filter(s=>base(s)&&actv(s)).map(s=>[s.studentId,s])).keys()];
+  grpCtx={program,zone,teacher,type,day,start,end,days:allDays};
+  document.getElementById('schedModalTitle').textContent=`${zone} · ${allDays.join(' · ')} ${start}–${end}`;
+  document.getElementById('schedDetailGrid').innerHTML=
+    `<div class="di"><label>Program</label><span>${program}</span></div>`+
+    `<div class="di"><label>Jenis</label><span>${type==='regular'?'Reguler':'Private'}</span></div>`+
+    `<div class="di"><label>Guru</label><span>${teacher}</span></div>`+
+    `<div class="di"><label>Waktu</label><span>${start} – ${end}</span></div>`+
+    `<div class="di" style="grid-column:1/-1"><label>Hari</label><span>${allDays.join(' · ')}</span></div>`+
+    `<div class="di"><label>Jumlah Siswa</label><span>${ids.length}</span></div>`;
+  document.getElementById('schedStudentList').innerHTML=ids.map(id=>{
+    const st=S.students.find(x=>x.id===id);
+    const ds=[...new Set(S.schedules.filter(s=>base(s)&&s.studentId===id).map(s=>s.day))].sort((a,b)=>DAYS.indexOf(a)-DAYS.indexOf(b));
+    return`<div class="schip" onclick="openStudDetail(${id})"><div><div class="schip-name">${st?st.name:''}</div><div class="schip-meta"><b>${ds.join(' · ')}</b> · ${start}–${end}</div></div><div class="schip-arr"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div></div>`;
+  }).join('')||'<div style="color:var(--ink-faint);font-size:12px;">Tidak ada siswa</div>';
   const hdr=document.querySelector('#schedOv .mhdr');
   const oldH=document.getElementById('akHdrBtns');if(oldH)oldH.remove();
   const ftr=document.getElementById('schedModalFooter');
   if(!isAdmin){ftr.innerHTML='';return;}
   const q=`'${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}'`;
   hdr.querySelector('.mclose').insertAdjacentHTML('beforebegin',
-    `<div id="akHdrBtns" style="display:flex;gap:6px;align-items:center;margin-left:auto;margin-right:8px;"><button class="btn btn-sm btn-p" onclick="hideOv('schedOv');openAddKid({program:'${program}',zone:'${zone}',teacher:'${teacher}',type:'${type}',day:'${day}',start:'${start}',end:'${end}',locked:true})">+ Tambah</button><button class="btn btn-sm" onclick="openEditSched(${q})">Edit</button></div>`);
+    `<div id="akHdrBtns" style="display:flex;gap:6px;align-items:center;margin-left:auto;margin-right:8px;"><button class="btn btn-sm btn-p" onclick="openAddFromGrp()">+ Tambah</button><button class="btn btn-sm" onclick="openEditSched(${q})">Edit</button></div>`);
   ftr.innerHTML=`<button class="btn btn-d btn-sm" onclick="quickDeleteSched(${q})">Hapus Kelas</button>`;
 };
 
@@ -1445,7 +1464,7 @@ openStudDetail=function(id){
   _openStudDetailOrig(id);
   if(!isAdmin||!grpCtx)return;
   const g=grpCtx;
-  if(!S.schedules.some(s=>s.studentId===id&&sameGrp(s,g)))return;
+  if(!S.schedules.some(s=>s.studentId===id&&s.program===g.program&&s.zone===g.zone&&s.teacher===g.teacher&&s.type===g.type&&s.start===g.start&&s.end===g.end))return;
   const a=[g.program,g.zone,g.teacher,g.type,g.day,g.start,g.end].map(v=>`'${v}'`).join(',');
   document.getElementById('studDetailBody').insertAdjacentHTML('beforeend',
     `<button class="btn btn-d" style="width:100%;justify-content:center;margin-top:12px;" onclick="removeKidFromClass(${id},${a})">Keluarkan dari Kelas Ini</button>`);
