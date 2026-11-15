@@ -458,6 +458,10 @@ body{background:#F4F6FA;}
 .tg-r{background:#8B5A2B;}
 .tg-s{display:none;}
 @media(max-width:640px){.tg-l{display:none;}.tg-s{display:inline;}}
+
+/* ══ SOROT KOLOM HARI INI (transparan) ══ */
+.stbl tbody td.is-today{background:rgba(27,108,168,.07)!important;}
+[data-theme="dark"] .stbl tbody td.is-today{background:rgba(77,163,212,.10)!important;}
 </style>
 </head>
 <body>
@@ -1006,7 +1010,7 @@ function rSched(){
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,end)))wb='<span class="wb-p">WB</span>';}
       else{const ts=S.holidays.filter(h=>h.day===day&&ro(h.start,h.end,slot,end));wb=[...new Set(ts.map(h=>h.teacher))].map(()=>'<span class="wb-p">WB</span>').join('');}
       const isNow=day===today&&tm(slot)<=nm&&nm<tm(end);
-      return`<td class="${isNow&&(blocks||wb)?'now-cell':''}">${wb}${blocks}</td>`;
+      return`<td class="${isNow&&(blocks||wb)?'now-cell':''} ${day===today?'is-today':''}">${wb}${blocks}</td>`;
     }).join('');
     return`<tr class="${eve?'er':''}${tm(slot)<=nm&&nm<tm(end)?' now-row':''}"><td class="ttd"><div class="tl"><span class="ts">${slot}</span></div></td>${tds}</tr>`;
   }).join('');
@@ -1411,14 +1415,17 @@ async function removeKidFromClass(id,program,zone,teacher,type,day,start,end){
   S.schedules=S.schedules.filter(s=>!(s.studentId===id&&sameGrp(s,g)));
   await saveAll();rSched();rSummary();
   const left=S.schedules.some(s=>sameGrp(s,g)&&S.students.some(x=>x.id===s.studentId&&x.active!==false));
+  hideOv('studDetailOv');
   if(left)openSchedDetail(program,zone,teacher,type,day,start,end);else hideOv('schedOv');
   toast('Siswa dikeluarkan dari kelas');
 }
 
-/* Popup detail kelas: Tambah & Edit di header, Keluarkan per anak, Hapus Kelas di footer */
+/* Popup detail kelas: Tambah & Edit di header, Hapus Kelas di footer */
+let grpCtx=null;
 const _openSchedDetailOrig2=openSchedDetail;
 openSchedDetail=function(program,zone,teacher,type,day,start,end){
   _openSchedDetailOrig2(program,zone,teacher,type,day,start,end);
+  grpCtx={program,zone,teacher,type,day,start,end};
   const hdr=document.querySelector('#schedOv .mhdr');
   const oldH=document.getElementById('akHdrBtns');if(oldH)oldH.remove();
   const ftr=document.getElementById('schedModalFooter');
@@ -1427,12 +1434,18 @@ openSchedDetail=function(program,zone,teacher,type,day,start,end){
   hdr.querySelector('.mclose').insertAdjacentHTML('beforebegin',
     `<div id="akHdrBtns" style="display:flex;gap:6px;align-items:center;margin-left:auto;margin-right:8px;"><button class="btn btn-sm btn-p" onclick="hideOv('schedOv');openAddKid({program:'${program}',zone:'${zone}',teacher:'${teacher}',type:'${type}',day:'${day}',start:'${start}',end:'${end}',locked:true})">+ Tambah</button><button class="btn btn-sm" onclick="openEditSched(${q})">Edit</button></div>`);
   ftr.innerHTML=`<button class="btn btn-d btn-sm" onclick="quickDeleteSched(${q})">Hapus Kelas</button>`;
-  const g={program,zone,teacher,type,day,start,end};
-  const ids=[...new Map(S.schedules.filter(s=>sameGrp(s,g)&&S.students.some(x=>x.id===s.studentId&&x.active!==false)).map(s=>[s.studentId,s])).keys()];
-  document.querySelectorAll('#schedStudentList .schip').forEach((el,i)=>{
-    const id=ids[i];if(id===undefined)return;
-    el.insertAdjacentHTML('beforeend',`<button class="btn btn-sm btn-d" style="margin-left:8px;flex-shrink:0;" onclick="event.stopPropagation();removeKidFromClass(${id},'${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')">Keluarkan</button>`);
-  });
+};
+
+/* Detail siswa: tombol Keluarkan dari kelas ini (hanya muncul jika dibuka dari kelas) */
+const _openStudDetailOrig=openStudDetail;
+openStudDetail=function(id){
+  _openStudDetailOrig(id);
+  if(!isAdmin||!grpCtx)return;
+  const g=grpCtx;
+  if(!S.schedules.some(s=>s.studentId===id&&sameGrp(s,g)))return;
+  const a=[g.program,g.zone,g.teacher,g.type,g.day,g.start,g.end].map(v=>`'${v}'`).join(',');
+  document.getElementById('studDetailBody').insertAdjacentHTML('beforeend',
+    `<button class="btn btn-d" style="width:100%;justify-content:center;margin-top:12px;" onclick="removeKidFromClass(${id},${a})">Keluarkan dari Kelas Ini</button>`);
 };
 </script>
 </body>
