@@ -450,6 +450,14 @@ body{background:#F4F6FA;}
 .ak-add{font-size:11px;font-weight:700;color:#fff;background:var(--blue);border-radius:50px;padding:5px 11px;white-space:nowrap;}
 .ak-hint{font-size:12px;color:var(--ink-faint);padding:8px 0;}
 #akList{max-height:50vh;overflow-y:auto;}
+
+/* ══ BADGE TIPE KELAS (PC: panjang, mobile: singkat) ══ */
+.tgw{margin-top:2px;}
+.tg{display:inline-block;font-weight:800;color:#fff;border-radius:999px;padding:2px 7px;font-size:9px;letter-spacing:.05em;line-height:1.3;box-shadow:0 1px 3px rgba(0,0,0,.15);}
+.tg-p{background:#DC2626;}
+.tg-r{background:#8B5A2B;}
+.tg-s{display:none;}
+@media(max-width:640px){.tg-l{display:none;}.tg-s{display:inline;}}
 </style>
 </head>
 <body>
@@ -992,7 +1000,7 @@ function rSched(){
         const cls=g.program==='preschool'?(g.type==='regular'?'pr':'pp'):(g.type==='regular'?'er2':'ep');
         const isStart=g.start===slot,live=day===today&&tm(g.start)<=nm&&nm<tm(g.end)?' live':'';
         const key=GK(g),od=dsort(new Set([...gmap[key]].filter(d=>d!==day)));
-        return`<div class="${isStart?'blk':'blk-cont'} gb ${cls}${live}${focusKey===key?' gf':''}" style="--gc:${gcol(key)}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')"><div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${cnt}</div>${g.type==='private'?'<div class="bpv">PVT</div>':''}${od?`<div class="bd">+${od}</div>`:''}</div>`;
+        return`<div class="${isStart?'blk':'blk-cont'} gb ${cls}${live}${focusKey===key?' gf':''}" style="--gc:${gcol(key)}" onclick="openSchedDetail('${g.program}','${g.zone}','${g.teacher}','${g.type}','${g.day}','${g.start}','${g.end}')"><div class="bn">${fn}</div><div class="bz">${g.zone}</div><div class="bc"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${cnt}</div>${g.type==='private'?'<div class="tgw"><span class="tg tg-p"><span class="tg-l">PRIVATE</span><span class="tg-s">PVT</span></span></div>':'<div class="tgw"><span class="tg tg-r"><span class="tg-l">REGULER</span><span class="tg-s">REG</span></span></div>'}${od?`<div class="bd">+${od}</div>`:''}</div>`;
       }).join('');
       let wb='';
       if(ft){if(S.holidays.some(h=>h.teacher===ft&&h.day===day&&ro(h.start,h.end,slot,end)))wb='<span class="wb-p">WB</span>';}
@@ -1395,14 +1403,36 @@ document.getElementById('schedBody').addEventListener('click',e=>{
   openAddKid({day,start:slot,end:nh(slot),locked:false});
 });
 
-/* Tombol "+ Tambah Anak" di popup detail kelas */
-const _openSchedDetailOrig=openSchedDetail;
+/* Keluarkan satu anak dari kelas */
+async function removeKidFromClass(id,program,zone,teacher,type,day,start,end){
+  const g={program,zone,teacher,type,day,start,end};
+  const st=S.students.find(x=>x.id===id);
+  if(!confirm(`Keluarkan ${st?st.name:'siswa'} dari kelas ini?`))return;
+  S.schedules=S.schedules.filter(s=>!(s.studentId===id&&sameGrp(s,g)));
+  await saveAll();rSched();rSummary();
+  const left=S.schedules.some(s=>sameGrp(s,g)&&S.students.some(x=>x.id===s.studentId&&x.active!==false));
+  if(left)openSchedDetail(program,zone,teacher,type,day,start,end);else hideOv('schedOv');
+  toast('Siswa dikeluarkan dari kelas');
+}
+
+/* Popup detail kelas: Tambah & Edit di header, Keluarkan per anak, Hapus Kelas di footer */
+const _openSchedDetailOrig2=openSchedDetail;
 openSchedDetail=function(program,zone,teacher,type,day,start,end){
-  _openSchedDetailOrig(program,zone,teacher,type,day,start,end);
-  const old=document.getElementById('akBtnWrap');if(old)old.remove();
-  if(!isAdmin)return;
-  document.getElementById('schedStudentList').insertAdjacentHTML('afterend',
-    `<div id="akBtnWrap" style="margin-top:12px;"><button class="btn btn-p" style="width:100%;justify-content:center;" onclick="hideOv('schedOv');openAddKid({program:'${program}',zone:'${zone}',teacher:'${teacher}',type:'${type}',day:'${day}',start:'${start}',end:'${end}',locked:true})">+ Tambah Anak ke Kelas Ini</button></div>`);
+  _openSchedDetailOrig2(program,zone,teacher,type,day,start,end);
+  const hdr=document.querySelector('#schedOv .mhdr');
+  const oldH=document.getElementById('akHdrBtns');if(oldH)oldH.remove();
+  const ftr=document.getElementById('schedModalFooter');
+  if(!isAdmin){ftr.innerHTML='';return;}
+  const q=`'${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}'`;
+  hdr.querySelector('.mclose').insertAdjacentHTML('beforebegin',
+    `<div id="akHdrBtns" style="display:flex;gap:6px;align-items:center;margin-left:auto;margin-right:8px;"><button class="btn btn-sm btn-p" onclick="hideOv('schedOv');openAddKid({program:'${program}',zone:'${zone}',teacher:'${teacher}',type:'${type}',day:'${day}',start:'${start}',end:'${end}',locked:true})">+ Tambah</button><button class="btn btn-sm" onclick="openEditSched(${q})">Edit</button></div>`);
+  ftr.innerHTML=`<button class="btn btn-d btn-sm" onclick="quickDeleteSched(${q})">Hapus Kelas</button>`;
+  const g={program,zone,teacher,type,day,start,end};
+  const ids=[...new Map(S.schedules.filter(s=>sameGrp(s,g)&&S.students.some(x=>x.id===s.studentId&&x.active!==false)).map(s=>[s.studentId,s])).keys()];
+  document.querySelectorAll('#schedStudentList .schip').forEach((el,i)=>{
+    const id=ids[i];if(id===undefined)return;
+    el.insertAdjacentHTML('beforeend',`<button class="btn btn-sm btn-d" style="margin-left:8px;flex-shrink:0;" onclick="event.stopPropagation();removeKidFromClass(${id},'${program}','${zone}','${teacher}','${type}','${day}','${start}','${end}')">Keluarkan</button>`);
+  });
 };
 </script>
 </body>
