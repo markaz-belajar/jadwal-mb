@@ -627,7 +627,7 @@ body{background:#F4F6FA;}
 
       <!-- Siswa -->
       <div id="msub-students" style="display:none;">
-        <div class="card">
+        <div class="card" id="addStudCard" style="display:none;margin-bottom:12px;">
           <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Tambah Siswa Manual</div>
           <form id="studForm">
             <div style="position:relative;margin-bottom:10px;">
@@ -644,7 +644,7 @@ body{background:#F4F6FA;}
           </form>
         </div>
         <div class="card">
-          <div class="stud-total-bar" id="studTotalBar"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px;"><div class="stud-total-bar" id="studTotalBar" style="flex:1;margin-bottom:0;"></div><button class="btn btn-sm btn-g" onclick="togAddStud()" style="flex-shrink:0;"><svg viewBox="0 0 24 24" style="width:14px;height:14px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Tambah</button></div>
           <table class="dtbl"><thead><tr><th>Nama</th><th>Program</th><th>Zona</th><th>Kelas</th><th>Status</th></tr></thead><tbody id="studTbl"></tbody></table>
         </div>
       </div>
@@ -911,6 +911,8 @@ window.deleteStud=async id=>{
   if(st&&st.fromSheets){S.ignoredSheet=[...(S.ignoredSheet||[]),st.name.toLowerCase()];}
   return _deleteStudOrig(id);
 };
+
+function togAddStud(){const c=document.getElementById('addStudCard');c.style.display=c.style.display==='none'?'block':'none';if(c.style.display==='block')document.getElementById('sName').focus();}
 
 /* ══ INIT ══ */
 document.addEventListener('DOMContentLoaded',async()=>{
