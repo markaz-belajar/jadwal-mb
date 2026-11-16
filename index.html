@@ -628,24 +628,6 @@ body{background:#F4F6FA;}
       <!-- Siswa -->
       <div id="msub-students" style="display:none;">
         <div class="card">
-          <div class="ctitle"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>Import dari Spreadsheet</div>
-          <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
-            <button class="btn btn-g" onclick="importFromSheets()" id="importBtn">
-              <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
-              Sync Spreadsheet
-            </button>
-            <span id="importStatus" style="font-size:12px;color:var(--ink-faint);">Belum disync</span>
-          </div>
-          <div id="importPreview">
-            <div style="font-size:11px;color:var(--ink-faint);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em;">Preview — pilih siswa</div>
-            <div class="import-scroll"><table class="dtbl" id="importPreviewTbl"><thead><tr><th><input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)"> Semua</th><th>Nama</th><th>Program</th><th>Kelas</th></tr></thead><tbody id="importPreviewBody"></tbody></table></div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">
-              <button class="btn btn-g" onclick="confirmImport()">Tambahkan Dipilih</button>
-              <span id="selectedCount" style="font-size:12px;color:var(--ink-faint);">0 dipilih</span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
           <div class="ctitle"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Tambah Siswa Manual</div>
           <form id="studForm">
             <div style="position:relative;margin-bottom:10px;">
@@ -663,7 +645,7 @@ body{background:#F4F6FA;}
         </div>
         <div class="card">
           <div class="stud-total-bar" id="studTotalBar"></div>
-          <table class="dtbl"><thead><tr><th>Nama</th><th>Program</th><th>Zona</th><th>Kelas</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="studTbl"></tbody></table>
+          <table class="dtbl"><thead><tr><th>Nama</th><th>Program</th><th>Zona</th><th>Kelas</th><th>Status</th></tr></thead><tbody id="studTbl"></tbody></table>
         </div>
       </div>
 
@@ -876,7 +858,7 @@ function callApi(params){
 async function loadData(){
   try{
     const r=await callApi({action:'load'});
-    if(r.success&&r.data){S.teachers=r.data.teachers||[...DEF_T];S.zones=r.data.zones||[];S.students=r.data.students||[];S.schedules=r.data.schedules||[];S.holidays=r.data.holidays||[];}
+    if(r.success&&r.data){S.teachers=r.data.teachers||[...DEF_T];S.zones=r.data.zones||[];S.students=r.data.students||[];S.schedules=r.data.schedules||[];S.holidays=r.data.holidays||[];S.ignoredSheet=r.data.ignoredSheet||[];}
     else S.teachers=[...DEF_T.map(t=>({...t}))];
   }catch{
     S.teachers=JSON.parse(localStorage.getItem('mbt')||'null')||DEF_T.map(t=>({...t}));
@@ -890,17 +872,51 @@ async function loadData(){
   S.students.forEach(s=>{if(s.active==null)s.active=true;});
 }
 async function saveAll(){
-  const d={teachers:S.teachers,zones:S.zones,students:S.students,schedules:S.schedules,holidays:S.holidays};
+  const d={teachers:S.teachers,zones:S.zones,students:S.students,schedules:S.schedules,holidays:S.holidays,ignoredSheet:S.ignoredSheet||[]};
   localStorage.setItem('mbt',JSON.stringify(S.teachers));localStorage.setItem('mbz',JSON.stringify(S.zones));
   localStorage.setItem('mbs',JSON.stringify(S.students));localStorage.setItem('mbsc',JSON.stringify(S.schedules));
   localStorage.setItem('mbh',JSON.stringify(S.holidays));
   try{await callApi({action:'save',data:JSON.stringify(d)});}catch{}
 }
 
+/* Detail siswa dari tab Kelola: Edit, Off/On, Hapus di dalam popup */
+function openStudKelola(id){
+  grpCtx=null;
+  openStudDetail(id);
+  const s=S.students.find(x=>x.id===id);if(!s)return;
+  document.getElementById('studDetailBody').insertAdjacentHTML('beforeend',
+    `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);"><button class="btn btn-sm btn-p" onclick="hideOv('studDetailOv');openEditStud(${id})">Edit</button><button class="btn btn-sm" onclick="hideOv('studDetailOv');toggleStud(${id})">${s.active!==false?'Off':'On'}</button><button class="btn btn-sm btn-d" onclick="hideOv('studDetailOv');deleteStud(${id})">Hapus</button></div>`);
+}
+
+/* Sinkron otomatis dari spreadsheet: siswa baru langsung masuk, tanpa import manual */
+async function autoSyncSheets(){
+  try{
+    const res=await fetch(SHEET_URL),text=await res.text();
+    const json=JSON.parse(text.replace(/^\/\*O_o\*\/\s*google\.visualization\.Query\.setResponse\(/,'').replace(/\);?\s*$/,''));
+    sheetData=json.table.rows.map(r=>({name:(r.c[2]?.v||'').toString().trim(),program:parseProgram(r.c[23]?.v||''),grade:parseGrade(r.c[9]?.v||'')})).filter(r=>r.name&&r.name!=='-'&&r.name.length>1);
+    const ign=S.ignoredSheet||[];let added=0;
+    sheetData.forEach(x=>{
+      const k=x.name.toLowerCase();
+      if(ign.includes(k)||S.students.some(y=>y.name.toLowerCase()===k))return;
+      S.students.push({id:Date.now()+Math.random(),name:x.name,program:x.program||'',zone:'',grade:x.grade||'',active:true,fromSheets:true});added++;
+    });
+    if(added){await saveAll();rStud();rZones();rebuildAddButtons();toast(`${added} siswa baru dari spreadsheet`);}
+  }catch(e){}
+}
+
+/* Hapus siswa: catat namanya agar tidak ditambahkan lagi oleh sinkron */
+const _deleteStudOrig=window.deleteStud;
+window.deleteStud=async id=>{
+  const st=S.students.find(x=>x.id===id);
+  if(st&&st.fromSheets){S.ignoredSheet=[...(S.ignoredSheet||[]),st.name.toLowerCase()];}
+  return _deleteStudOrig(id);
+};
+
 /* ══ INIT ══ */
 document.addEventListener('DOMContentLoaded',async()=>{
   setGreetDate();
   await loadData();
+  autoSyncSheets();setInterval(autoSyncSheets,300000);
   document.getElementById('LS').style.display='none';
   setTimeout(()=>document.getElementById('splash').classList.add('hidden'),2200);
   ['wbStart','wbEnd','ewStart','ewEnd'].forEach(id=>{
@@ -1217,8 +1233,9 @@ function rStud(){
   const totalEle=S.students.filter(s=>s.program==='elementary'&&s.active!==false).length;
   const bar=document.getElementById('studTotalBar');
   if(bar)bar.innerHTML=`<div class="stud-total-badge"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>${totalAktif} aktif / ${S.students.length} total</div>${totalPre?`<span class="stud-prog-badge stud-prog-pre">Preschool: ${totalPre}</span>`:''}${totalEle?`<span class="stud-prog-badge stud-prog-ele">Elementary: ${totalEle}</span>`:''}`;
-  tb.innerHTML=S.students.map(s=>`<tr><td>${s.name}${s.fromSheets?'<span class="chip cg" style="margin-left:5px;font-size:9px;padding:1px 6px;">Sheets</span>':''}</td><td>${s.program||'—'}</td><td>${s.zone||'<span style="color:var(--red);font-size:11px;">—</span>'}</td><td>${s.grade||'-'}</td><td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Off'}</span></td><td style="display:flex;gap:3px;flex-wrap:wrap;"><button class="btn btn-sm btn-p" onclick="openEditStud(${s.id})">Edit</button><button class="btn btn-sm" onclick="toggleStud(${s.id})">${s.active!==false?'Off':'On'}</button><button class="btn btn-sm btn-d" onclick="deleteStud(${s.id})">Hapus</button></td></tr>`).join('')||`<tr><td colspan="6" style="text-align:center;color:var(--ink-faint);padding:16px;">Belum ada siswa</td></tr>`;
+  tb.innerHTML=S.students.map(s=>`<tr onclick="openStudKelola(${s.id})" style="cursor:pointer;"><td>${s.name}${s.fromSheets?'<span class="chip cg" style="margin-left:5px;font-size:9px;padding:1px 6px;">Sheets</span>':''}</td><td>${s.program||'—'}</td><td>${s.zone||'<span style="color:var(--red);font-size:11px;">—</span>'}</td><td>${s.grade||'-'}</td><td><span class="chip ${s.active!==false?'cg':'cGray'}">${s.active!==false?'Aktif':'Off'}</span></td></tr>`).join('')||`<tr><td colspan="5" style="text-align:center;color:var(--ink-faint);padding:16px;">Belum ada siswa</td></tr>`;
 }
+
 function rWb(){
   const tb=document.getElementById('wbTbl');if(!tb)return;
   const wbT=document.getElementById('wbTeach');
